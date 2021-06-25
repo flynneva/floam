@@ -1,8 +1,8 @@
 // Author of FLOAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
-#ifndef _ODOM_ESTIMATION_CLASS_H_
-#define _ODOM_ESTIMATION_CLASS_H_
+#ifndef FLOAM__ODOM_ESTIMATION_HPP_
+#define FLOAM__ODOM_ESTIMATION_HPP_
 
 //std lib
 #include <string>
@@ -29,24 +29,31 @@
 #include <Eigen/Geometry>
 
 //LOCAL LIB
-#include "lidar.h"
-#include "lidarOptimization.h"
+#include "floam/lidar.hpp"
+#include "floam/lidar_optimization.hpp"
+
 #include <ros/ros.h>
 
-class OdomEstimationClass 
+namespace floam
+{
+namespace odom
+{
+
+
+class OdomEstimation
 {
 
     public:
-    	OdomEstimationClass();
+    	OdomEstimation();
     	
 		void init(lidar::Lidar lidar_param, double map_resolution);	
 		void initMapWithPoints(const pcl::PointCloud<pcl::PointXYZI>::Ptr& edge_in, const pcl::PointCloud<pcl::PointXYZI>::Ptr& surf_in);
 		void updatePointsToMap(const pcl::PointCloud<pcl::PointXYZI>::Ptr& edge_in, const pcl::PointCloud<pcl::PointXYZI>::Ptr& surf_in);
-		void getMap(pcl::PointCloud<pcl::PointXYZI>::Ptr& laserCloudMap);
+		void getMap(pcl::PointCloud<pcl::PointXYZI>::Ptr& lidarCloudMap);
 
 		Eigen::Isometry3d odom;
-		pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudCornerMap;
-		pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudSurfMap;
+		pcl::PointCloud<pcl::PointXYZI>::Ptr lidarCloudCornerMap;
+		pcl::PointCloud<pcl::PointXYZI>::Ptr lidarCloudSurfMap;
 	private:
 		//optimization variable
 		double parameters[7] = {0, 0, 0, 1, 0, 0, 0};
@@ -76,6 +83,8 @@ class OdomEstimationClass
 		void pointAssociateToMap(pcl::PointXYZI const *const pi, pcl::PointXYZI *const po);
 		void downSamplingToMap(const pcl::PointCloud<pcl::PointXYZI>::Ptr& edge_pc_in, pcl::PointCloud<pcl::PointXYZI>::Ptr& edge_pc_out, const pcl::PointCloud<pcl::PointXYZI>::Ptr& surf_pc_in, pcl::PointCloud<pcl::PointXYZI>::Ptr& surf_pc_out);
 };
+}  // namespace odom
+}  // namespace floam
 
-#endif // _ODOM_ESTIMATION_CLASS_H_
+#endif  // FLOAM__ODOM_ESTIMATION_HPP_
 

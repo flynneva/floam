@@ -1,13 +1,20 @@
 // Author of FLOAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
-#ifndef _LIDAR_OPTIMIZATION_ANALYTIC_H_
-#define _LIDAR_OPTIMIZATION_ANALYTIC_H_
+#ifndef FLOAM__LIDAR_OPTIMIZATION_HPP_
+#define FLOAM__LIDAR_OPTIMIZATION_HPP_
 
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
+
+
+namespace floam
+{
+namespace lidar
+{
+
 
 void getTransformFromSe3(const Eigen::Matrix<double,6,1>& se3, Eigen::Quaterniond& q, Eigen::Vector3d& t);
 
@@ -46,8 +53,8 @@ public:
     virtual int GlobalSize() const { return 7; }
     virtual int LocalSize() const { return 6; }
 };
+}  // namespace lidar
+}  // namespace floam
 
-
-
-#endif // _LIDAR_OPTIMIZATION_ANALYTIC_H_
+#endif // FLOAM__LIDAR_OPTIMIZATION_HPP_
 

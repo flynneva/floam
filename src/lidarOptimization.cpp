@@ -2,7 +2,13 @@
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
 
-#include "lidarOptimization.h"
+#include "floam/lidar_optimization.hpp"
+
+
+namespace floam
+{
+namespace lidar
+{
 
 EdgeAnalyticCostFunction::EdgeAnalyticCostFunction(Eigen::Vector3d curr_point_, Eigen::Vector3d last_point_a_, Eigen::Vector3d last_point_b_)
         : curr_point(curr_point_), last_point_a(last_point_a_), last_point_b(last_point_b_){
@@ -150,3 +156,6 @@ Eigen::Matrix<double,3,3> skew(Eigen::Matrix<double,3,1>& mat_in){
     skew_mat(2,1) =  mat_in(0);
     return skew_mat;
 }
+
+}  // namespace lidar
+}  // namespace floam

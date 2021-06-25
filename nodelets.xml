@@ -1,0 +1,10 @@
+<library path="lib/libfloam">
+
+	<class name="floam/lidar/LidarNode"
+				 type="floam::lidar::LidarNode"
+         base_class_type="nodelet::Nodelet">
+    	<description>
+	    </description>
+  	</class>
+	  
+</library>

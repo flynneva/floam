@@ -23,26 +23,31 @@
 #include <pcl/point_types.h>
 
 //local lib
-#include "lidar.h"
-#include "odomEstimationClass.h"
+#include "floam/lidar.hpp"
+#include "floam/odom_estimation.hpp"
 
-OdomEstimationClass odomEstimation;
+namespace floam
+{
+namespace odom
+{
+
+floam::odom::OdomEstimation odomEstimation;
 std::mutex mutex_lock;
 std::queue<sensor_msgs::PointCloud2ConstPtr> pointCloudEdgeBuf;
 std::queue<sensor_msgs::PointCloud2ConstPtr> pointCloudSurfBuf;
-lidar::Lidar lidar_param;
+floam::lidar::Lidar lidar_param;
 
-ros::Publisher pubLaserOdometry;
-void velodyneSurfHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
+ros::Publisher pubLidarOdometry;
+void velodyneSurfHandler(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg)
 {
     mutex_lock.lock();
-    pointCloudSurfBuf.push(laserCloudMsg);
+    pointCloudSurfBuf.push(lidarCloudMsg);
     mutex_lock.unlock();
 }
-void velodyneEdgeHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
+void velodyneEdgeHandler(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg)
 {
     mutex_lock.lock();
-    pointCloudEdgeBuf.push(laserCloudMsg);
+    pointCloudEdgeBuf.push(lidarCloudMsg);
     mutex_lock.unlock();
 }
 
@@ -109,18 +114,18 @@ void odom_estimation(){
             br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", "base_link"));
 
             // publish odometry
-            nav_msgs::Odometry laserOdometry;
-            laserOdometry.header.frame_id = "map";
-            laserOdometry.child_frame_id = "base_link";
-            laserOdometry.header.stamp = pointcloud_time;
-            laserOdometry.pose.pose.orientation.x = q_current.x();
-            laserOdometry.pose.pose.orientation.y = q_current.y();
-            laserOdometry.pose.pose.orientation.z = q_current.z();
-            laserOdometry.pose.pose.orientation.w = q_current.w();
-            laserOdometry.pose.pose.position.x = t_current.x();
-            laserOdometry.pose.pose.position.y = t_current.y();
-            laserOdometry.pose.pose.position.z = t_current.z();
-            pubLaserOdometry.publish(laserOdometry);
+            nav_msgs::Odometry lidarOdometry;
+            lidarOdometry.header.frame_id = "map";
+            lidarOdometry.child_frame_id = "base_link";
+            lidarOdometry.header.stamp = pointcloud_time;
+            lidarOdometry.pose.pose.orientation.x = q_current.x();
+            lidarOdometry.pose.pose.orientation.y = q_current.y();
+            lidarOdometry.pose.pose.orientation.z = q_current.z();
+            lidarOdometry.pose.pose.orientation.w = q_current.w();
+            lidarOdometry.pose.pose.position.x = t_current.x();
+            lidarOdometry.pose.pose.position.y = t_current.y();
+            lidarOdometry.pose.pose.position.z = t_current.z();
+            pubLidarOdometry.publish(lidarOdometry);
 
         }
         //sleep 2 ms every time
@@ -128,6 +133,9 @@ void odom_estimation(){
         std::this_thread::sleep_for(dura);
     }
 }
+
+}  // namespace odom
+}  // namespace floam
 
 int main(int argc, char **argv)
 {
@@ -147,18 +155,18 @@ int main(int argc, char **argv)
     nh.getParam("/scan_line", scan_line);
     nh.getParam("/map_resolution", map_resolution);
 
-    lidar_param.setScanPeriod(scan_period);
-    lidar_param.setVerticalAngle(vertical_angle);
-    lidar_param.setLines(scan_line);
-    lidar_param.setMaxDistance(max_dis);
-    lidar_param.setMinDistance(min_dis);
+    floam::odom::lidar_param.setScanPeriod(scan_period);
+    floam::odom::lidar_param.setVerticalAngle(vertical_angle);
+    floam::odom::lidar_param.setLines(scan_line);
+    floam::odom::lidar_param.setMaxDistance(max_dis);
+    floam::odom::lidar_param.setMinDistance(min_dis);
 
-    odomEstimation.init(lidar_param, map_resolution);
-    ros::Subscriber subEdgeLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/laser_cloud_edge", 100, velodyneEdgeHandler);
-    ros::Subscriber subSurfLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/laser_cloud_surf", 100, velodyneSurfHandler);
+    floam::odom::odomEstimation.init(floam::odom::lidar_param, map_resolution);
+    ros::Subscriber subEdgelidarCloud = nh.subscribe<sensor_msgs::PointCloud2>("/lidar_cloud_edge", 100, floam::odom::velodyneEdgeHandler);
+    ros::Subscriber subSurflidarCloud = nh.subscribe<sensor_msgs::PointCloud2>("/lidar_cloud_surf", 100, floam::odom::velodyneSurfHandler);
 
-    pubLaserOdometry = nh.advertise<nav_msgs::Odometry>("/odom", 100);
-    std::thread odom_estimation_process{odom_estimation};
+    floam::odom::pubLidarOdometry = nh.advertise<nav_msgs::Odometry>("/odom", 100);
+    std::thread odom_estimation_process{floam::odom::odom_estimation};
 
     ros::spin();
 

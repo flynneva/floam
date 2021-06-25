@@ -2,8 +2,8 @@
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
 
-#ifndef _LASER_MAPPING_H_
-#define _LASER_MAPPING_H_
+#ifndef FLOAM__LIDAR_MAPPING_HPP_
+#define FLOAM__LIDAR_MAPPING_HPP_
 
 //PCL lib
 #include <pcl/point_cloud.h>
@@ -23,21 +23,26 @@
 #include <vector>
 
 
-#define LASER_CELL_WIDTH 50.0
-#define LASER_CELL_HEIGHT 50.0
-#define LASER_CELL_DEPTH 50.0
+#define LIDAR_CELL_WIDTH 50.0
+#define LIDAR_CELL_HEIGHT 50.0
+#define LIDAR_CELL_DEPTH 50.0
 
 //separate map as many sub point clouds
 
-#define LASER_CELL_RANGE_HORIZONTAL 2
-#define LASER_CELL_RANGE_VERTICAL 2
+#define LIDAR_CELL_RANGE_HORIZONTAL 2
+#define LIDAR_CELL_RANGE_VERTICAL 2
 
 
-class LaserMappingClass 
+namespace floam
+{
+namespace lidar
+{
+
+class LidarMapping 
 {
 
     public:
-    	LaserMappingClass();
+    	LidarMapping();
 		void init(double map_resolution);
 		void updateCurrentPointsToMap(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_in, const Eigen::Isometry3d& pose_current);
 		pcl::PointCloud<pcl::PointXYZI>::Ptr getMap(void);
@@ -61,7 +66,8 @@ class LaserMappingClass
 		void checkPoints(int& x, int& y, int& z);
 
 };
+}  // namespace lidar
+}  // namespace floam
 
-
-#endif // _LASER_MAPPING_H_
+#endif // FLOAM__LIDAR_MAPPING_HPP_
 

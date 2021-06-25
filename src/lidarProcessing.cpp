@@ -1,15 +1,27 @@
 // Author of FLOAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
-#include "laserProcessingClass.h"
+#include "floam/lidar_processing.hpp"
 
-void LaserProcessingClass::init(lidar::Lidar lidar_param_in){
+
+namespace floam
+{
+namespace lidar
+{
+
+
+LidarProcessing::LidarProcessing()
+{
+  // constructor
+}
+
+void LidarProcessing::init(lidar::Lidar lidar_param_in){
     
     lidar_param = lidar_param_in;
 
 }
 
-void LaserProcessingClass::featureExtraction(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_in, pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_out_edge, pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_out_surf){
+void LidarProcessing::featureExtraction(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_in, pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_out_edge, pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_out_surf){
 
     std::vector<int> indices;
     pcl::removeNaNFromPointCloud(*pc_in, indices);
@@ -98,7 +110,7 @@ void LaserProcessingClass::featureExtraction(const pcl::PointCloud<pcl::PointXYZ
 }
 
 
-void LaserProcessingClass::featureExtractionFromSector(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_in, std::vector<Double2d>& cloudCurvature, pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_out_edge, pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_out_surf){
+void LidarProcessing::featureExtractionFromSector(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_in, std::vector<Double2d>& cloudCurvature, pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_out_edge, pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_out_surf){
 
     std::sort(cloudCurvature.begin(), cloudCurvature.end(), [](const Double2d & a, const Double2d & b)
     { 
@@ -209,9 +221,6 @@ void LaserProcessingClass::featureExtractionFromSector(const pcl::PointCloud<pcl
 
 
 }
-LaserProcessingClass::LaserProcessingClass(){
-    
-}
 
 Double2d::Double2d(int id_in, double value_in){
     id = id_in;
@@ -222,3 +231,6 @@ PointsInfo::PointsInfo(int layer_in, double time_in){
     layer = layer_in;
     time = time_in;
 };
+
+}  // namespace lidar
+}  // namespace floam

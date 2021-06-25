@@ -1,12 +1,15 @@
 // Author of FLOAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
-#ifndef _LIDAR_H_
-#define _LIDAR_H_
+#ifndef FLOAM__LIDAR_HPP_
+#define FLOAM__LIDAR_HPP_
 
 //define lidar parameter
 
-namespace lidar{
+namespace floam
+{
+namespace lidar
+{
 
 class Lidar
 {
@@ -32,9 +35,8 @@ class Lidar
         double vertical_angle;
 };
 
+}  // namespace lidar
+}  // namespace floam
 
-}
-
-
-#endif // _LIDAR_H_
+#endif  // FLOAM__LIDAR_HPP_
 

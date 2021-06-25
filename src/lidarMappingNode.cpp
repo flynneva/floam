@@ -23,17 +23,22 @@
 #include <pcl/point_types.h>
 
 //local lib
-#include "laserMappingClass.h"
-#include "lidar.h"
+#include "floam/lidar_mapping.hpp"
+#include "floam/lidar.hpp"
 
+namespace floam
+{
+namespace lidar
+{
 
-LaserMappingClass laserMapping;
-lidar::Lidar lidar_param;
+floam::lidar::LidarMapping lidarMapping;
+floam::lidar::Lidar lidar_param;
 std::mutex mutex_lock;
 std::queue<nav_msgs::OdometryConstPtr> odometryBuf;
 std::queue<sensor_msgs::PointCloud2ConstPtr> pointCloudBuf;
 
 ros::Publisher map_pub;
+
 void odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {
     mutex_lock.lock();
@@ -41,22 +46,22 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
     mutex_lock.unlock();
 }
 
-void velodyneHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
+void velodyneHandler(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg)
 {
     mutex_lock.lock();
-    pointCloudBuf.push(laserCloudMsg);
+    pointCloudBuf.push(lidarCloudMsg);
     mutex_lock.unlock();
 }
 
 
-void laser_mapping(){
+void lidar_mapping(){
     while(1){
         if(!odometryBuf.empty() && !pointCloudBuf.empty()){
 
             //read data
             mutex_lock.lock();
             if(!pointCloudBuf.empty() && pointCloudBuf.front()->header.stamp.toSec()<odometryBuf.front()->header.stamp.toSec()-0.5*lidar_param.scan_period){
-                ROS_WARN("time stamp unaligned error and pointcloud discarded, pls check your data --> laser mapping node"); 
+                ROS_WARN("time stamp unaligned error and pointcloud discarded, pls check your data --> lidar mapping node"); 
                 pointCloudBuf.pop();
                 mutex_lock.unlock();
                 continue;              
@@ -64,7 +69,7 @@ void laser_mapping(){
 
             if(!odometryBuf.empty() && odometryBuf.front()->header.stamp.toSec() < pointCloudBuf.front()->header.stamp.toSec()-0.5*lidar_param.scan_period){
                 odometryBuf.pop();
-                ROS_INFO("time stamp unaligned with path final, pls check your data --> laser mapping node");
+                ROS_INFO("time stamp unaligned with path final, pls check your data --> lidar mapping node");
                 mutex_lock.unlock();
                 continue;  
             }
@@ -82,9 +87,9 @@ void laser_mapping(){
             mutex_lock.unlock();
             
 
-            laserMapping.updateCurrentPointsToMap(pointcloud_in,current_pose);
+            lidarMapping.updateCurrentPointsToMap(pointcloud_in,current_pose);
 
-            pcl::PointCloud<pcl::PointXYZI>::Ptr pc_map = laserMapping.getMap();
+            pcl::PointCloud<pcl::PointXYZI>::Ptr pc_map = lidarMapping.getMap();
             sensor_msgs::PointCloud2 PointsMsg;
             pcl::toROSMsg(*pc_map, PointsMsg);
             PointsMsg.header.stamp = pointcloud_time;
@@ -99,6 +104,10 @@ void laser_mapping(){
         std::this_thread::sleep_for(dura);
     }
 }
+
+}  // namespace lidar
+}  // namespace floam
+
 
 int main(int argc, char **argv)
 {
@@ -118,18 +127,18 @@ int main(int argc, char **argv)
     nh.getParam("/scan_line", scan_line);
     nh.getParam("/map_resolution", map_resolution);
 
-    lidar_param.setScanPeriod(scan_period);
-    lidar_param.setVerticalAngle(vertical_angle);
-    lidar_param.setLines(scan_line);
-    lidar_param.setMaxDistance(max_dis);
-    lidar_param.setMinDistance(min_dis);
+    floam::lidar::lidar_param.setScanPeriod(scan_period);
+    floam::lidar::lidar_param.setVerticalAngle(vertical_angle);
+    floam::lidar::lidar_param.setLines(scan_line);
+    floam::lidar::lidar_param.setMaxDistance(max_dis);
+    floam::lidar::lidar_param.setMinDistance(min_dis);
 
-    laserMapping.init(map_resolution);
-    ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/velodyne_points_filtered", 100, velodyneHandler);
-    ros::Subscriber subOdometry = nh.subscribe<nav_msgs::Odometry>("/odom", 100, odomCallback);
+    floam::lidar::lidarMapping.init(map_resolution);
+    ros::Subscriber sublidarCloud = nh.subscribe<sensor_msgs::PointCloud2>("/velodyne_points_filtered", 100, floam::lidar::velodyneHandler);
+    ros::Subscriber subOdometry = nh.subscribe<nav_msgs::Odometry>("/odom", 100, floam::lidar::odomCallback);
 
-    map_pub = nh.advertise<sensor_msgs::PointCloud2>("/map", 100);
-    std::thread laser_mapping_process{laser_mapping};
+    floam::lidar::map_pub = nh.advertise<sensor_msgs::PointCloud2>("/map", 100);
+    std::thread lidar_mapping_process{floam::lidar::lidar_mapping};
 
     ros::spin();
 
