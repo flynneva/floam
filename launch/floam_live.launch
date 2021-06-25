@@ -1,32 +1,20 @@
 <?xml version="1.0"?>
 <launch>
 
-    <!-- launch your velodyne here -->
-    <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch"/>
+    <!-- launch your sensor driver here -->
+    <include file="$(find hfl_driver)/launch/hfl118_node.launch"/>
     
-    <!-- For Velodyne VLP-16 -->
-    <param name="scan_line" value="16" />
-    
-
-    <!-- For Velodyne HDL-32 
-    <param name="scan_line" value="32" />
-    -->
-
-    <!-- For Velodyne HDL-64 
-    <param name="scan_line" value="64" />
-    -->
-
-    <!--- Sim Time -->
-    <param name="scan_period" value="0.1" />
+    <param name="scan_lines" value="32" />
+    <param name="period" value="0.1" />
 
     <param name="vertical_angle" type="double" value="2.0" />
     <param name="map_resolution" type="double" value="0.2" />
     <param name="max_dis" type="double" value="90.0" />
     <param name="min_dis" type="double" value="0.5" />
-    <!--- -->
-    <node pkg="floam" type="floam_odom_estimation_node" name="floam_odom_estimation_node" output="screen"/>
-    <node pkg="floam" type="floam_laser_processing_node" name="floam_laser_processing_node" output="screen"/>
-    <node pkg="floam" type="floam_laser_mapping_node" name="floam_laser_mapping_node" output="screen"/>
+
+    <node pkg="floam" type="floam_odom_node" name="floam_odom_node" output="screen"/>
+    <node pkg="floam" type="floam_lidar_node" name="floam_lidar_node" output="screen"/>
+    <node pkg="floam" type="floam_mapping_node" name="floam_mapping_node" output="screen"/>
 
     <node pkg="tf" type="static_transform_publisher" name="word2map_tf"  args="0 0 0 0 0 0 /world /map 10" />
     

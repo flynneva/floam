@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <launch>
-
+    <arg name="path_to_bag" default="$(env HOME)/Downloads/example.bag" />
     
-    <node pkg="rosbag" type="play" name="rosbag_play" args="--clock $(env HOME)/Downloads/2011_09_30_0018.bag"/> 
+    <!-- your bag file here -->
+    <node pkg="rosbag" type="play" name="rosbag_play" args="--clock $(arg path_to_bag)"/> 
 
     <!-- For Velodyne VLP-16 
     <param name="scan_line" value="16" />
@@ -24,8 +25,8 @@
     <param name="min_dis" type="double" value="3.0" />
 
     <!--- -->
-    <node pkg="floam" type="floam_odom_estimation_node" name="floam_odom_estimation_node" output="screen"/>
-    <node pkg="floam" type="floam_laser_processing_node" name="floam_laser_processing_node" output="screen"/>
+    <node pkg="floam" type="floam_odom_node" name="floam_odom_node" output="screen"/>
+    <node pkg="floam" type="floam_lidar_node" name="floam_lidar_node" output="screen"/>
     
     <node pkg="tf" type="static_transform_publisher" name="word2map_tf"  args="0 0 0 0 0 0 /world /map 10" />
     <arg name="rviz" default="true" />
