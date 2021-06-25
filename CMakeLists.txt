@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   eigen_conversions
+  nodelet
 )
 
 find_package(Eigen3)
@@ -49,14 +50,24 @@ link_directories(
 )
 
 catkin_package(
-  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp rospy std_msgs
   DEPENDS EIGEN3 PCL Ceres 
   INCLUDE_DIRS include
+  CATKIN_DEPENDS
+  geometry_msgs
+  nav_msgs
+  roscpp
+  rospy
+  std_msgs
+  nodelet
+  tf
+  eigen_conversions
+  rosbag
+  sensor_msgs
 )
 
-add_executable(${PROJECT_NAME}_lidar_node
-  src/lidarProcessingNode.cpp
-  src/lidarProcessing.cpp
+add_library(${PROJECT_NAME}_lidar_node
+  src/lidar_processing_node.cpp
+  src/lidar_processing.cpp
   src/lidar.cpp)
 
 target_link_libraries(${PROJECT_NAME}_lidar_node
@@ -66,11 +77,11 @@ target_link_libraries(${PROJECT_NAME}_lidar_node
   ${CERES_LIBRARIES}
 )
 
-add_executable(${PROJECT_NAME}_odom_node
-  src/odomEstimationNode.cpp
-  src/lidarOptimization.cpp
+add_library(${PROJECT_NAME}_odom_node
+  src/odom_estimation_node.cpp
+  src/lidar_optimization.cpp
   src/lidar.cpp
-  src/odomEstimation.cpp
+  src/odom_estimation.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_odom_node
@@ -80,9 +91,9 @@ target_link_libraries(${PROJECT_NAME}_odom_node
   ${CERES_LIBRARIES}
 )
 
-add_executable(${PROJECT_NAME}_mapping_node
-  src/lidarMappingNode.cpp
-  src/lidarMapping.cpp
+add_library(${PROJECT_NAME}_mapping_node
+  src/lidar_mapping_node.cpp
+  src/lidar_mapping.cpp
   src/lidar.cpp
 )
 

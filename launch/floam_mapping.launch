@@ -14,9 +14,25 @@
     <param name="map_resolution" type="double" value="0.4" />
     <param name="min_dis" type="double" value="3.0" />
 
-    <node pkg="floam" type="floam_odom_node" name="floam_odom_node" output="screen"/>
-    <node pkg="floam" type="floam_lidar_node" name="floam_lidar_node" output="screen"/>
-    <node pkg="floam" type="floam_mapping_node" name="floam_mapping_node" output="screen"/>
+    <!-- Node Manager Arguments -->
+    <arg name="node_name" value="floam" />
+    <arg name="manager_name" value="$(arg node_name)_manager" />
+    <arg name="global_manager_name" value="/$(arg manager_name)" />
+
+    <!-- Nodelet Manager -->
+    <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" />
+
+    <!-- floam odom node -->
+    <node pkg="nodelet" type="nodelet" name="$(arg node_name)_odom_node"
+      args="load floam/odom/OdomEstimationNode $(arg global_manager_name)" output="screen"/>
+
+    <!-- floam lidar node -->
+    <node pkg="nodelet" type="nodelet" name="$(arg node_name)_lidar_node"
+      args="load floam/lidar/LidarProcessingNode $(arg global_manager_name)" output="screen"/>
+  
+    <!-- floam mapping node -->
+    <node pkg="nodelet" type="nodelet" name="$(arg node_name)_mapping_node"
+      args="load floam/lidar/LidarMappingNode $(arg global_manager_name)" output="screen"/>
 
     <node pkg="tf" type="static_transform_publisher" name="word2map_tf"  args="0 0 0 0 0 0 /world /map 10" />
     

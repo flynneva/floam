@@ -1,10 +1,26 @@
-<library path="lib/libfloam">
+<library path="lib/libfloam_lidar_node">
+  <class name="floam/lidar/LidarProcessingNode"
+    type="floam::lidar::LidarProcessingNode"
+    base_class_type="nodelet::Nodelet">
+      <description>
+      </description>
+  </class>
+</library>
 
-	<class name="floam/lidar/LidarNode"
-				 type="floam::lidar::LidarNode"
-         base_class_type="nodelet::Nodelet">
-    	<description>
-	    </description>
-  	</class>
-	  
+<library path="lib/libfloam_mapping_node">
+  <class name="floam/lidar/LidarMappingNode"
+    type="floam::lidar::LidarMappingNode"
+    base_class_type="nodelet::Nodelet">
+      <description>
+      </description>
+  </class>
+</library>
+
+<library path="lib/libfloam_odom_node">
+  <class name="floam/odom/OdomEstimationNode"
+    type="floam::odom::OdomEstimationNode"
+    base_class_type="nodelet::Nodelet">
+   	  <description>
+      </description>
+  </class>
 </library>

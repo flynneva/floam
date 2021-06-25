@@ -14,6 +14,7 @@ namespace odom
 OdomEstimation::OdomEstimation()
 {
   // constructor
+  
 }
 
 void OdomEstimation::init(floam::lidar::Lidar lidar_param, double map_resolution){

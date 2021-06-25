@@ -24,6 +24,7 @@
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>roscpp</depend>
+  <depend>nodelet</depend>
   <depend>rospy</depend>
   <depend>std_msgs</depend>  
   <depend>rosbag</depend>
@@ -33,5 +34,6 @@
   <depend>hector_trajectory_server</depend>
 
   <export>
+	  <nodelet plugin="${prefix}/nodelets.xml" />
   </export>
 </package>
