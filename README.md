@@ -94,6 +94,17 @@ if you would like to create the map at the same time, you can run (more cpu cost
 If the mapping process is slow, you may wish to change the rosbag speed by replacing "--clock -r 0.5" with "--clock -r 0.2" in your launch file, or you can change the map publish frequency manually (default is 10 Hz)
 
 
+### 4.4 How to use floam nodes
+
+The `floam` package provides three nodes: `floam_lidar_node`, `floam_odom_node`, `floam_mapping_node`. Each of these nodes feeds the next with the proper data, so the data flow goes:
+
+  1. raw input pointclouds
+  2. `floam_lidar_node`
+  3. `floam_odom_node`
+  4. `floam_mapping_node`
+
+
+
 ## 5. Test on other sequence
 To generate rosbag file of kitti dataset, you may use the tools provided by 
 [kitti_to_rosbag](https://github.com/ethz-asl/kitti_to_rosbag) or [kitti2bag](https://github.com/tomas789/kitti2bag) 

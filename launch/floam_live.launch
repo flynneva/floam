@@ -7,6 +7,7 @@
     <param name="scan_lines" value="32" />
     <param name="period" value="0.1" />
 
+    <param name="/use_sim_time" default="true" />
     <param name="vertical_angle" type="double" value="2.0" />
     <param name="map_resolution" type="double" value="0.2" />
     <param name="max_dis" type="double" value="90.0" />
@@ -20,12 +21,15 @@
     <!-- Nodelet Manager -->
     <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" />
 
+    <!-- floam odom node -->
     <node pkg="nodelet" type="nodelet" name="$(arg node_name)_odom_node"
       args="load floam/odom/OdomEstimationNode $(arg global_manager_name)" output="screen"/>
 
+    <!-- floam lidar node -->
     <node pkg="nodelet" type="nodelet" name="$(arg node_name)_lidar_node"
       args="load floam/lidar/LidarProcessingNode $(arg global_manager_name)" output="screen"/>
   
+    <!-- floam mapping node -->
     <node pkg="nodelet" type="nodelet" name="$(arg node_name)_mapping_node"
       args="load floam/lidar/LidarMappingNode $(arg global_manager_name)" output="screen"/>
 

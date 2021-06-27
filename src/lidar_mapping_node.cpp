@@ -53,12 +53,12 @@ void LidarMappingNode::onInit()
   double min_dis = 2.0;
   double map_resolution = 0.4;
 
-  m_nodeHandle.getParam("/scan_period", scan_period); 
-  m_nodeHandle.getParam("/vertical_angle", vertical_angle); 
-  m_nodeHandle.getParam("/max_dis", max_dis);
-  m_nodeHandle.getParam("/min_dis", min_dis);
-  m_nodeHandle.getParam("/scan_line", scan_line);
-  m_nodeHandle.getParam("/map_resolution", map_resolution);
+  m_nodeHandle.getParam("scan_period", scan_period); 
+  m_nodeHandle.getParam("vertical_angle", vertical_angle); 
+  m_nodeHandle.getParam("max_dis", max_dis);
+  m_nodeHandle.getParam("min_dis", min_dis);
+  m_nodeHandle.getParam("scan_line", scan_line);
+  m_nodeHandle.getParam("map_resolution", map_resolution);
   m_lidar.setScanPeriod(scan_period);
   m_lidar.setVerticalAngle(vertical_angle);
   m_lidar.setLines(scan_line);
@@ -67,8 +67,8 @@ void LidarMappingNode::onInit()
   
   m_lidarMapping.init(map_resolution);
 
-  m_subPoints = m_nodeHandle.subscribe<sensor_msgs::PointCloud2>("/velodyne_points_filtered", 100, &LidarMappingNode::handlePoints, this);
-  m_subOdom = m_nodeHandle.subscribe<nav_msgs::Odometry>("/odom", 100, &LidarMappingNode::handleOdom, this);
+  m_subPoints = m_nodeHandle.subscribe<sensor_msgs::PointCloud2>("points_filtered", 100, &LidarMappingNode::handlePoints, this);
+  m_subOdom = m_nodeHandle.subscribe<nav_msgs::Odometry>("odom", 100, &LidarMappingNode::handleOdom, this);
   
   m_pubMap = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("/map", 100);
   // std::thread lidar_mapping_process{floam::lidar::lidar_mapping};

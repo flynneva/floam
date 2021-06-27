@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- launch your sensor driver here -->
+    <include file="$(find hfl_driver)/launch/hfl118_node.launch"/>
+    
+    <param name="scan_lines" value="32" />
+    <param name="period" value="0.1" />
+
+    <param name="vertical_angle" type="double" value="2.0" />
+    <param name="map_resolution" type="double" value="0.2" />
+    <param name="max_dis" type="double" value="90.0" />
+    <param name="min_dis" type="double" value="0.5" />
+
+    <!-- Node Manager Arguments -->
+    <arg name="node_name" value="floam" />
+    <arg name="manager_name" value="$(arg node_name)_manager" />
+    <arg name="global_manager_name" value="/$(arg manager_name)" />
+    <arg name="new_manager" default="false" />
+    
+    <!-- Nodelet Manager -->
+    <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" if="$(arg new_manager)" />
+
+    <!-- floam odom node -->
+    <node pkg="nodelet" type="nodelet" name="$(arg node_name)_odom_node"
+      args="load floam/odom/OdomEstimationNode $(arg global_manager_name)" output="screen"/>
+
+</launch>

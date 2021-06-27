@@ -11,6 +11,7 @@ namespace floam
 namespace lidar
 {
 
+// TODO(flynneva): should this just be a struct?
 class Lidar
 {
     public:
@@ -24,6 +25,7 @@ class Lidar
         void setMaxDistance(double max_distance_in);
         void setMinDistance(double min_distance_in);
 
+        bool is_scanner;
     	double max_distance;
         double min_distance;
         int num_lines;

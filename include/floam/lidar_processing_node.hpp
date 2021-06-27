@@ -49,8 +49,8 @@ public:
   
   void lidarProcessing();
 
-  double total_time =0;
-  int total_frame=0;
+  double total_time = 0;
+  int frame_count = 0;
 
 private:
   ros::NodeHandle m_nodeHandle;
@@ -64,7 +64,7 @@ private:
   LidarProcessing m_lidarProcessing;
   Lidar m_lidar;
 
-  std::mutex m_mutexLock;
+  // std::mutex m_mutexLock;
   std::queue<sensor_msgs::PointCloud2ConstPtr> m_points;
 };
 

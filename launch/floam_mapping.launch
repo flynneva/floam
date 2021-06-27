@@ -18,17 +18,10 @@
     <arg name="node_name" value="floam" />
     <arg name="manager_name" value="$(arg node_name)_manager" />
     <arg name="global_manager_name" value="/$(arg manager_name)" />
+    <arg name="new_manager" default="false" />
 
     <!-- Nodelet Manager -->
-    <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" />
-
-    <!-- floam odom node -->
-    <node pkg="nodelet" type="nodelet" name="$(arg node_name)_odom_node"
-      args="load floam/odom/OdomEstimationNode $(arg global_manager_name)" output="screen"/>
-
-    <!-- floam lidar node -->
-    <node pkg="nodelet" type="nodelet" name="$(arg node_name)_lidar_node"
-      args="load floam/lidar/LidarProcessingNode $(arg global_manager_name)" output="screen"/>
+    <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" if="$(arg new_manager)" />
   
     <!-- floam mapping node -->
     <node pkg="nodelet" type="nodelet" name="$(arg node_name)_mapping_node"

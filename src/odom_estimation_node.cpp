@@ -64,8 +64,8 @@ void OdomEstimationNode::onInit()
   m_lidar.setMinDistance(min_dis);  
   m_odomEstimation.init(m_lidar, map_resolution);
 
-  ros::Subscriber subEdgelidarCloud = m_nodeHandle.subscribe<sensor_msgs::PointCloud2>("lidar_cloud_edge", 100, &OdomEstimationNode::edgeHandler, this);
-  ros::Subscriber subSurflidarCloud = m_nodeHandle.subscribe<sensor_msgs::PointCloud2>("lidar_cloud_surf", 100, &OdomEstimationNode::surfaceHandler, this);  
+  ros::Subscriber subEdgelidarCloud = m_nodeHandle.subscribe<sensor_msgs::PointCloud2>("points_edge", 100, &OdomEstimationNode::edgeHandler, this);
+  ros::Subscriber subSurflidarCloud = m_nodeHandle.subscribe<sensor_msgs::PointCloud2>("points_surface", 100, &OdomEstimationNode::surfaceHandler, this);  
   pubLidarOdometry = m_nodeHandle.advertise<nav_msgs::Odometry>("odom", 100);
   // std::thread m_odomEstimation{OdomEstimationNode::odomEstimation};
 }

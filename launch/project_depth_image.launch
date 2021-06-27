@@ -1,0 +1,30 @@
+<launch>
+  <arg name="lidar_name" default="lidar" />
+  <arg name="node_name" default="$(arg lidar_name)" />
+  <arg name="manager_name" default="$(arg lidar_name)_manager" />
+  <arg name="depth_camera_info_topic" default="/$(arg lidar_name)/depth/camera_info" />
+  <arg name="depth_image_topic" default="/$(arg lidar_name)/depth/image_raw" />
+  <arg name="points_topic" default="/$(arg lidar_name)/depth/points" />
+  <arg name="rectify_depth" default="false" />
+
+  <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" />
+
+ <!-- Rectify Depth Image -->
+  <node pkg="nodelet" type="nodelet" name="$(arg lidar_name)_rectify"
+        args="load image_proc/rectify $(arg manager_name)"
+        if="$(arg rectify_depth)" >
+    <remap from="image_mono" to="$(arg depth_image_topic)" />
+    <remap from="camera_info" to="$(arg depth_camera_info_topic)" />
+    <remap from="image_rect" to="$(arg lidar_name)/depth/image_rect" />
+  </node>
+
+  
+  <!-- Project Rectified Depth Image -->
+  <node pkg="nodelet" type="nodelet" name="$(arg node_name)"
+        args="load depth_image_proc/point_cloud_xyz $(arg manager_name)"
+        launch-prefix="bash -c 'sleep 1.0; $0 $@' " >
+    <remap from="camera_info" to="$(arg depth_camera_info_topic)"/>
+    <remap from="image_rect" to="$(arg lidar_name)/depth/image_raw"/>
+    <remap from="points" to="$(arg points_topic)"/>
+  </node>
+</launch>
