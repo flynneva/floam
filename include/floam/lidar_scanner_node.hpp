@@ -1,5 +1,3 @@
-
-
 // Author of FLOAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
@@ -27,8 +25,7 @@
 #include <pcl/point_types.h>
 
 //local lib
-#include "floam/lidar.hpp"
-#include "floam/lidar_processing.hpp"
+#include "floam/lidar_scanner.hpp"
 
 
 namespace floam
@@ -37,17 +34,15 @@ namespace lidar
 {
 
 
-class LidarProcessingNode : public nodelet::Nodelet
+class ScanningLidarNode : public nodelet::Nodelet
 {
 public:
-  LidarProcessingNode();
-  ~LidarProcessingNode();
+  ScanningLidarNode();
+  ~ScanningLidarNode();
 
   void onInit();
 
   void handlePoints(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg);
-  
-  void lidarProcessing();
 
   double total_time = 0;
   int frame_count = 0;
@@ -61,8 +56,7 @@ private:
   ros::Publisher m_pubSurfacePoints;
   ros::Publisher m_pubPointsFiltered;
 
-  LidarProcessing m_lidarProcessing;
-  Lidar m_lidar;
+  ScanningLidar m_lidar;
 
   // std::mutex m_mutexLock;
   std::queue<sensor_msgs::PointCloud2ConstPtr> m_points;

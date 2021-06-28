@@ -1,5 +1,8 @@
-#ifndef FLOAM__LIDAR_MAPPING_NODE_HPP_
-#define FLOAM__LIDAR_MAPPING_NODE_HPP_
+// Significant re-wrte by Evan Flynn 2021
+
+// Author of FLOAM: Wang Han 
+// Email wh200720041@gmail.com
+// Homepage https://wanghan.pro
 
 //c++ lib
 #include <cmath>
@@ -12,6 +15,7 @@
 //ros lib
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
+#include <sensor_msgs/Imu.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_datatypes.h>
@@ -23,40 +27,42 @@
 #include <pcl/point_types.h>
 
 //local lib
-#include "floam/lidar_mapping.hpp"
 #include "floam/lidar_imager.hpp"
-#include "floam/lidar_scanner.hpp"
+
 
 namespace floam
 {
 namespace lidar
 {
 
-class LidarMappingNode : public nodelet::Nodelet
+
+class ImagingLidarNode : public nodelet::Nodelet
 {
 public:
-  LidarMappingNode();
-  ~LidarMappingNode();
+  ImagingLidarNode();
+  ~ImagingLidarNode();
 
   void onInit();
 
-  void handleOdom(const nav_msgs::Odometry::ConstPtr &msg);
   void handlePoints(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg);
-  void mapping();
+
+  double total_time = 0;
+  int frame_count = 0;
 
 private:
   ros::NodeHandle m_nodeHandle;
-  ros::Publisher m_pubMap;
-  ros::Subscriber m_subPoints, m_subOdom;
 
-  LidarMapping m_lidarMapping;
+  ros::Subscriber m_subPoints;
+
+  ros::Publisher m_pubEdgePoints;
+  ros::Publisher m_pubSurfacePoints;
+  ros::Publisher m_pubPointsFiltered;
+
   ImagingLidar m_lidar;
-  std::mutex m_mutexLock;
-  std::queue<nav_msgs::OdometryConstPtr> m_odometry;
+
+  // std::mutex m_mutexLock;
   std::queue<sensor_msgs::PointCloud2ConstPtr> m_points;
 };
 
 }  // namespace lidar
 }  // namespace floam
-
-#endif  // FLOAM__LIDAR_MAPPING_NODE_HPP_

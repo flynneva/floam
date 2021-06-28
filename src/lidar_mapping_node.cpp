@@ -25,7 +25,8 @@
 //local lib
 #include "floam/lidar_mapping_node.hpp"
 #include "floam/lidar_mapping.hpp"
-#include "floam/lidar.hpp"
+#include "floam/lidar_imager.hpp"
+#include "floam/lidar_scanner.hpp"
 
 namespace floam
 {

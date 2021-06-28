@@ -66,9 +66,8 @@ catkin_package(
 )
 
 add_library(${PROJECT_NAME}_lidar_node
-  src/lidar_processing_node.cpp
-  src/lidar_processing.cpp
-  src/lidar.cpp)
+  src/lidar_imager_node.cpp
+  src/lidar_imager.cpp)
 
 target_link_libraries(${PROJECT_NAME}_lidar_node
   ${catkin_LIBRARIES}  
@@ -77,32 +76,32 @@ target_link_libraries(${PROJECT_NAME}_lidar_node
   ${CERES_LIBRARIES}
 )
 
-add_library(${PROJECT_NAME}_odom_node
-  src/odom_estimation_node.cpp
-  src/lidar_optimization.cpp
-  src/lidar.cpp
-  src/odom_estimation.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}_odom_node
-  ${catkin_LIBRARIES}
-  ${EIGEN3_LIBRARIES}
-  ${PCL_LIBRARIES}
-  ${CERES_LIBRARIES}
-)
-
-add_library(${PROJECT_NAME}_mapping_node
-  src/lidar_mapping_node.cpp
-  src/lidar_mapping.cpp
-  src/lidar.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}_mapping_node
-  ${catkin_LIBRARIES}
-  ${EIGEN3_LIBRARIES} 
-  ${PCL_LIBRARIES}
-  ${CERES_LIBRARIES}
-)
+#add_library(${PROJECT_NAME}_odom_node
+#  src/odom_estimation_node.cpp
+#  src/lidar_optimization.cpp
+#  src/lidar.cpp
+#  src/odom_estimation.cpp
+#)
+#
+#target_link_libraries(${PROJECT_NAME}_odom_node
+#  ${catkin_LIBRARIES}
+#  ${EIGEN3_LIBRARIES}
+#  ${PCL_LIBRARIES}
+#  ${CERES_LIBRARIES}
+#)
+#
+#add_library(${PROJECT_NAME}_mapping_node
+#  src/lidar_mapping_node.cpp
+#  src/lidar_mapping.cpp
+#  src/lidar.cpp
+#)
+#
+#target_link_libraries(${PROJECT_NAME}_mapping_node
+#  ${catkin_LIBRARIES}
+#  ${EIGEN3_LIBRARIES} 
+#  ${PCL_LIBRARIES}
+#  ${CERES_LIBRARIES}
+#)
 
 #############
 ## Install ##
@@ -110,8 +109,8 @@ target_link_libraries(${PROJECT_NAME}_mapping_node
 
 install(TARGETS
   ${PROJECT_NAME}_lidar_node
-  ${PROJECT_NAME}_odom_node
-  ${PROJECT_NAME}_mapping_node
+  #${PROJECT_NAME}_odom_node
+  #${PROJECT_NAME}_mapping_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

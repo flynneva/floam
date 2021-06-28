@@ -24,9 +24,8 @@
 #include <pcl/point_types.h>
 
 //local lib
-#include "floam/lidar_processing_node.hpp"
-#include "floam/lidar.hpp"
-#include "floam/lidar_processing.hpp"
+#include "floam/lidar_scanner_node.hpp"
+#include "floam/lidar_scanner.hpp"
 
 
 namespace floam
@@ -34,17 +33,17 @@ namespace floam
 namespace lidar
 {
 
-LidarProcessingNode::LidarProcessingNode()
+ScanningLidarNode::ScanningLidarNode()
 {
   // constructor
 }
 
-LidarProcessingNode::~LidarProcessingNode()
+ScanningLidarNode::~ScanningLidarNode()
 {
   // destructor
 }
 
-void LidarProcessingNode::onInit()
+void ScanningLidarNode::onInit()
 {
     m_nodeHandle = getPrivateNodeHandle();
 
@@ -57,23 +56,21 @@ void LidarProcessingNode::onInit()
     double min_dis = 2.0;
 
     m_nodeHandle.getParam("points_topic", points_topic);
-    m_nodeHandle.getParam("is_scanner", is_scanner);
-    m_nodeHandle.getParam("scan_period", scan_period); 
-    m_nodeHandle.getParam("vertical_angle", vertical_angle); 
+    m_nodeHandle.getParam("scan_period", scan_period);
+    m_nodeHandle.getParam("vertical_angle", vertical_angle);
+    m_nodeHandle.getParam("horizontal_angle", horizontal_angle);
     m_nodeHandle.getParam("max_dis", max_dis);
     m_nodeHandle.getParam("min_dis", min_dis);
-    m_nodeHandle.getParam("scan_line", scan_line);
+    m_nodeHandle.getParam("scan_lines", scan_lines);
 
-    m_lidar.is_scanner = is_scanner;
-    m_lidar.setScanPeriod(scan_period);
-    m_lidar.setVerticalAngle(vertical_angle);
-    m_lidar.setLines(scan_line);
-    m_lidar.setMaxDistance(max_dis);
-    m_lidar.setMinDistance(min_dis);
+    m_lidar.m_settings.period = scan_period;
+    m_lidar.m_settings.lines = scan_lines;
+    m_lidar.m_settings.fov.vertical = vertical_angle;
+    m_lidar.m_settings.fov.horizontal = horizontal_angle;
+    m_lidar.m_settings.limits.distance.max = max_dis;
+    m_lidar.m_settings.limits.distance.min = min_dis;
 
-    m_lidarProcessing.init(m_lidar);
-
-    m_subPoints = m_nodeHandle.subscribe(points_topic, 100, &LidarProcessingNode::handlePoints, this);
+    m_subPoints = m_nodeHandle.subscribe(points_topic, 100, &ScanningLidarNode::handlePoints, this);
 
     m_pubEdgePoints = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("points_edge", 100);
 
@@ -82,7 +79,7 @@ void LidarProcessingNode::onInit()
     //std::thread lidar_processing_process{floam::lidar::lidar_processing};
 }
 
-void LidarProcessingNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & points)
+void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & points)
 {
   // convert msg to pcl format, only XYZ
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
@@ -97,8 +94,8 @@ void LidarProcessingNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & 
   start = std::chrono::system_clock::now();
 
   // create surface normal and edge base objects
-  pcl::IntegralImageNormalEstimation<pcl::PointXYZ, pcl::Normal> normal_base = m_lidarProcessing.createSurfaceNormalsBase(cloud);
-  pcl::OrganizedEdgeBase<pcl::PointXYZ, pcl::Label> edge_base = m_lidarProcessing.createEdgeBase(cloud);
+  // pcl::IntegralImageNormalEstimation<pcl::PointXYZ, pcl::Normal> normal_base = m_lidar.createSurfaceNormalsBase(cloud);
+  // pcl::OrganizedEdgeBase<pcl::PointXYZ, pcl::Label> edge_base = m_lidar.createEdgeBase(cloud);
 
   // compute edges and surfaces
   pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
@@ -137,10 +134,8 @@ void LidarProcessingNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & 
   m_pubSurfacePoints.publish(surfacePoints);
 }
 
-void LidarProcessingNode::lidarProcessing() {}
-
 }  // namespace lidar
 }  // namespace floam
 
 #include <pluginlib/class_list_macros.h>  // NO LINT
-PLUGINLIB_EXPORT_CLASS(floam::lidar::LidarProcessingNode, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(floam::lidar::ScanningLidarNode, nodelet::Nodelet)

@@ -1,6 +1,6 @@
 <library path="lib/libfloam_lidar_node">
-  <class name="floam/lidar/LidarProcessingNode"
-    type="floam::lidar::LidarProcessingNode"
+  <class name="floam/lidar/ImagingLidarNode"
+    type="floam::lidar::ImagingLidarNode"
     base_class_type="nodelet::Nodelet">
       <description>
       </description>
