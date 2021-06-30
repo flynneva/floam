@@ -2,7 +2,7 @@
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
 
-#include "floam/lidar.hpp"
+#include "floam/lidar_imager.hpp"
 #include "floam/lidar_optimization.hpp"
 #include "floam/odom_estimation.hpp"
 
@@ -17,7 +17,7 @@ OdomEstimation::OdomEstimation()
   
 }
 
-void OdomEstimation::init(floam::lidar::Lidar lidar_param, double map_resolution){
+void OdomEstimation::init(floam::lidar::ImagingLidar lidar, double map_resolution){
     //init local map
     lidarCloudCornerMap = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>());
     lidarCloudSurfMap = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>());

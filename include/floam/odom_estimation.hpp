@@ -29,7 +29,7 @@
 #include <Eigen/Geometry>
 
 //LOCAL LIB
-#include "floam/lidar.hpp"
+#include "floam/lidar_imager.hpp"
 #include "floam/lidar_optimization.hpp"
 
 #include <ros/ros.h>
@@ -45,8 +45,8 @@ class OdomEstimation
 
     public:
     	OdomEstimation();
-    	
-		void init(lidar::Lidar lidar_param, double map_resolution);	
+
+		void init(floam::lidar::ImagingLidar lidar_param, double map_resolution);	
 		void initMapWithPoints(const pcl::PointCloud<pcl::PointXYZI>::Ptr& edge_in, const pcl::PointCloud<pcl::PointXYZI>::Ptr& surf_in);
 		void updatePointsToMap(const pcl::PointCloud<pcl::PointXYZI>::Ptr& edge_in, const pcl::PointCloud<pcl::PointXYZI>::Ptr& surf_in);
 		void getMap(pcl::PointCloud<pcl::PointXYZI>::Ptr& lidarCloudMap);

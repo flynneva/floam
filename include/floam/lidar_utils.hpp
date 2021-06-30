@@ -1,14 +1,19 @@
 #ifndef FLOAM__LIDAR_UTILS_HPP_
 #define FLOAM__LIDAR_UTILS_HPP_
+#include <pcl/features/organized_edge_detection.h>
+#include <pcl/features/integral_image_normal.h>
+#include <pcl/point_cloud.h>
 
 namespace floam
 {
 namespace lidar
 {
 
+
 enum Type {
-  rotatingScanner = 0,
-  imager  // TODO(flynneva): add more types here?
+  SCANNER_ROTATING = 0,
+  SCANNER_MEMS,
+  IMAGER,
 };
 
 struct Distance {
@@ -28,6 +33,46 @@ struct AngularResolution {
 struct FOV {
   double vertical{30.0};
   double horizontal{120.0};
+};
+
+struct Settings {
+  Type type;
+  FOV fov;  // degrees
+  AngularResolution angular; // degrees
+  Limits limits;
+};
+
+class Scanner {
+public:
+  Scanner();
+  ~Scanner();
+  int lines{0};
+  double period{0.0};
+  double scan_rate{0.0};
+  Settings common;
+};
+
+class Imager {
+public:
+  Imager();
+  ~Imager();
+  double framerate{0.0};
+  Settings common;
+};
+
+struct Total {
+  double time{0.0};
+  int frames{0};
+};
+
+struct Surface {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr points;
+  pcl::PointCloud<pcl::Normal>::Ptr normals;
+};
+
+struct Edge {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr points;
+  pcl::PointCloud<pcl::Label>::Ptr labels;
 };
 
 }  // namespace lidar

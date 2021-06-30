@@ -65,15 +65,23 @@ catkin_package(
   sensor_msgs
 )
 
+# reusable lidar library, provides the Lidar template class
+add_library(${PROJECT_NAME}_lidar
+  src/lidar.cpp
+)
+
 add_library(${PROJECT_NAME}_lidar_node
   src/lidar_imager_node.cpp
-  src/lidar_imager.cpp)
+  src/lidar_scanner_node.cpp
+)
 
 target_link_libraries(${PROJECT_NAME}_lidar_node
+  ${PROJECT_NAME}_lidar
   ${catkin_LIBRARIES}  
   ${EIGEN3_LIBRARIES}
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
+  ${PROJECT_NAME}_lidar
 )
 
 #add_library(${PROJECT_NAME}_odom_node
@@ -108,6 +116,7 @@ target_link_libraries(${PROJECT_NAME}_lidar_node
 #############
 
 install(TARGETS
+  ${PROJECT_NAME}_lidar
   ${PROJECT_NAME}_lidar_node
   #${PROJECT_NAME}_odom_node
   #${PROJECT_NAME}_mapping_node

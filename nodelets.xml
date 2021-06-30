@@ -7,6 +7,15 @@
   </class>
 </library>
 
+<library path="lib/libfloam_lidar_node">
+  <class name="floam/lidar/ScanningLidarNode"
+    type="floam::lidar::ScanningLidarNode"
+    base_class_type="nodelet::Nodelet">
+      <description>
+      </description>
+  </class>
+</library>
+
 <library path="lib/libfloam_mapping_node">
   <class name="floam/lidar/LidarMappingNode"
     type="floam::lidar::LidarMappingNode"

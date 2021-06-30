@@ -25,7 +25,7 @@
 
 //local lib
 #include "floam/lidar_scanner_node.hpp"
-#include "floam/lidar_scanner.hpp"
+#include "floam/lidar.hpp"
 
 
 namespace floam
@@ -48,9 +48,9 @@ void ScanningLidarNode::onInit()
     m_nodeHandle = getPrivateNodeHandle();
 
     std::string points_topic = "points";
-    bool is_scanner = false;
-    int scan_line = 64;
+    int scan_lines = 64;
     double vertical_angle = 2.0;
+    double horizontal_angle = 360.0;
     double scan_period= 0.1;
     double max_dis = 60.0;
     double min_dis = 2.0;
@@ -63,12 +63,12 @@ void ScanningLidarNode::onInit()
     m_nodeHandle.getParam("min_dis", min_dis);
     m_nodeHandle.getParam("scan_lines", scan_lines);
 
-    m_lidar.m_settings.period = scan_period;
-    m_lidar.m_settings.lines = scan_lines;
-    m_lidar.m_settings.fov.vertical = vertical_angle;
-    m_lidar.m_settings.fov.horizontal = horizontal_angle;
-    m_lidar.m_settings.limits.distance.max = max_dis;
-    m_lidar.m_settings.limits.distance.min = min_dis;
+    m_lidar.m_setting.period = scan_period;
+    m_lidar.m_setting.lines = scan_lines;
+    m_lidar.m_setting.common.fov.vertical = vertical_angle;
+    m_lidar.m_setting.common.fov.horizontal = horizontal_angle;
+    m_lidar.m_setting.common.limits.distance.max = max_dis;
+    m_lidar.m_setting.common.limits.distance.min = min_dis;
 
     m_subPoints = m_nodeHandle.subscribe(points_topic, 100, &ScanningLidarNode::handlePoints, this);
 
@@ -85,36 +85,36 @@ void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & po
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::fromROSMsg(*points, *cloud);
 
-  // initialize edge and surface clouds
-  pcl::PointCloud<pcl::PointXYZL>::Ptr pointcloud_edge(new pcl::PointCloud<pcl::PointXYZL>());          
-  pcl::PointCloud<pcl::PointNormal>::Ptr pointcloud_surface(new pcl::PointCloud<pcl::PointNormal>());
-
   // initialize timers to calculate how long the processing takes
   std::chrono::time_point<std::chrono::system_clock> start, end;
   start = std::chrono::system_clock::now();
 
-  // create surface normal and edge base objects
-  // pcl::IntegralImageNormalEstimation<pcl::PointXYZ, pcl::Normal> normal_base = m_lidar.createSurfaceNormalsBase(cloud);
-  // pcl::OrganizedEdgeBase<pcl::PointXYZ, pcl::Label> edge_base = m_lidar.createEdgeBase(cloud);
+  // initialize edge and surface clouds
+  pcl::PointCloud<pcl::PointXYZL>::Ptr pointcloud_edge(new pcl::PointCloud<pcl::PointXYZL>());          
+  pcl::PointCloud<pcl::PointNormal>::Ptr pointcloud_surface(new pcl::PointCloud<pcl::PointNormal>());
 
   // compute edges and surfaces
   pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
-  pcl::PointCloud <pcl::Label>::Ptr labels(new pcl::PointCloud<pcl::Label>);
-  std::vector <pcl::PointIndices> labelIndices;
+  pcl::PointCloud <pcl::Label>::Ptr edges(new pcl::PointCloud<pcl::Label>);
 
-  normal_base.compute(*normals);
-  edge_base.compute(*labels, labelIndices);
+  m_lidar.detectSurfaces(cloud, normals);
+  m_lidar.detectEdges(cloud, edges);
+
+  std::vector <pcl::PointIndices> labelIndices;
 
   // end processing time
   end = std::chrono::system_clock::now();
   std::chrono::duration<float> elapsed_seconds = end - start;
-  frame_count++;
+
+  // increment total frame counter
+  m_lidar.m_total.frames++;
+  // add time to total time
   float time_temp = elapsed_seconds.count() * 1000;
-  total_time+=time_temp;
-  // ROS_INFO("average lidar processing time %f ms", total_time/frame_count);
+  m_lidar.m_total.time += time_temp;
+  // ROS_INFO("average lidar processing time %f ms", m_lidar.m_total.time / m_lidar.m_total.frames);
 
   // combine xyz cloud with surface normals and edges
-  pcl::concatenateFields(*cloud, *labels, *pointcloud_edge);
+  pcl::concatenateFields(*cloud, *edges, *pointcloud_edge);
   pcl::concatenateFields(*cloud, *normals, *pointcloud_surface);
 
   // convert edge pcl to ROS message

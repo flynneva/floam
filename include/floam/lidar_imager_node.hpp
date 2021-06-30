@@ -3,31 +3,18 @@
 // Author of FLOAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
+#ifndef FLOAM__LIDAR_IMAGER_NODE_HPP_
+#define FLOAM__LIDAR_IMAGER_NODE_HPP_
 
-//c++ lib
-#include <cmath>
-#include <vector>
-#include <mutex>
-#include <queue>
-#include <thread>
-#include <chrono>
-
-//ros lib
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
-#include <sensor_msgs/Imu.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <nav_msgs/Odometry.h>
-#include <tf/transform_datatypes.h>
-#include <tf/transform_broadcaster.h>
 
-//pcl lib
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-//local lib
-#include "floam/lidar_imager.hpp"
+#include "floam/lidar.hpp"
 
 
 namespace floam
@@ -46,8 +33,7 @@ public:
 
   void handlePoints(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg);
 
-  double total_time = 0;
-  int frame_count = 0;
+
 
 private:
   ros::NodeHandle m_nodeHandle;
@@ -58,11 +44,12 @@ private:
   ros::Publisher m_pubSurfacePoints;
   ros::Publisher m_pubPointsFiltered;
 
-  ImagingLidar m_lidar;
-
-  // std::mutex m_mutexLock;
   std::queue<sensor_msgs::PointCloud2ConstPtr> m_points;
+
+  Lidar<floam::lidar::Imager> m_lidar;
 };
 
 }  // namespace lidar
 }  // namespace floam
+
+#endif  // FLOAM__LIDAR_IMAGER_NODE_HPP_
