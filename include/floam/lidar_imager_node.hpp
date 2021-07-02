@@ -15,6 +15,7 @@
 #include <pcl/point_types.h>
 
 #include "floam/lidar.hpp"
+#include "floam/lidar_utils.hpp"
 
 
 namespace floam
@@ -32,8 +33,6 @@ public:
   void onInit();
 
   void handlePoints(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg);
-
-
 
 private:
   ros::NodeHandle m_nodeHandle;

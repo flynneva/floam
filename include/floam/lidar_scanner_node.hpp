@@ -14,7 +14,7 @@
 
 //local lib
 #include "floam/lidar.hpp"
-
+#include "floam/lidar_utils.hpp"
 
 namespace floam
 {

@@ -9,7 +9,6 @@ namespace floam
 namespace lidar
 {
 
-
 enum Type {
   SCANNER_ROTATING = 0,
   SCANNER_MEMS,

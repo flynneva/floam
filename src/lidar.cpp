@@ -9,20 +9,6 @@ namespace floam
 namespace lidar
 {
 
-
-template<class T>
-Lidar<T>::Lidar()
-: m_setting(), m_total()
-{
-  // constructor
-}
-
-template<class T>
-Lidar<T>::~Lidar()
-{
-  // destructor
-}
-
 /// Scanner type
 template <>
 void Lidar<floam::lidar::Scanner>::detectEdges(

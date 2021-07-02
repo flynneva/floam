@@ -15,9 +15,6 @@ template <class T>
 class Lidar
 {
   public:
-    Lidar(); 
-    ~Lidar();
-
     ///  Detects surface normals from input pointcloud
     ///
     /// @param points input pointcloud
@@ -40,7 +37,6 @@ class Lidar
     T m_setting;
 
     floam::lidar::Total m_total;
-
 };
 
 /// overload detectSurfaces for Scanner type

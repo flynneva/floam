@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.2.1)
 project(floam)
 
 set(CMAKE_BUILD_TYPE "Release")
@@ -68,6 +68,7 @@ catkin_package(
 # reusable lidar library, provides the Lidar template class
 add_library(${PROJECT_NAME}_lidar
   src/lidar.cpp
+  src/lidar_utils.cpp
 )
 
 add_library(${PROJECT_NAME}_lidar_node
@@ -81,7 +82,6 @@ target_link_libraries(${PROJECT_NAME}_lidar_node
   ${EIGEN3_LIBRARIES}
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
-  ${PROJECT_NAME}_lidar
 )
 
 #add_library(${PROJECT_NAME}_odom_node
