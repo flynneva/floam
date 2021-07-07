@@ -1,27 +1,30 @@
+
+/// Major rewrite Author: Evan Flynn
+
+// Original Author of FLOAM: Wang Han 
+// Email wh200720041@gmail.com
+// Homepage https://wanghan.pro
+
 #ifndef FLOAM__ODOM_ESTIMATION_NODE_HPP_
 #define FLOAM__ODOM_ESTIMATION_NODE_HPP_
-
-//c++ lib
-#include <cmath>
-#include <vector>
-#include <mutex>
-#include <queue>
-#include <thread>
-#include <chrono>
-
-//ros lib
+\
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/exact_time.h>
+#include <message_filters/sync_policies/approximate_time.h>
 
-//local lib
-#include "floam/lidar.hpp"
+#include "floam/lidar_utils.hpp"
 #include "floam/odom_estimation.hpp"
 
 namespace floam
 {
 namespace odom
 {
+
+typedef message_filters::sync_policies::ExactTime<sensor_msgs::PointCloud2, sensor_msgs::PointCloud2> ExactSyncPolicy;
+typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2, sensor_msgs::PointCloud2> ApproximateSyncPolicy;
 
 class OdomEstimationNode : public nodelet::Nodelet
 {
@@ -45,22 +48,28 @@ public:
 
 private:
   ros::NodeHandle m_nodeHandle;
-  ros::Publisher pubLidarOdometry;
 
-  void surfaceHandler(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg);
-  void edgeHandler(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg);
-  void odomEstimation();
+  ros::Publisher m_pubLidarOdometry;
 
-  bool is_odom_inited = false;
-  double total_time =0;
-  int total_frame=0;
+  typedef message_filters::Synchronizer<ApproximateSyncPolicy> ApproximateSynchronizer;
+  typedef message_filters::Synchronizer<ExactSyncPolicy> ExactSynchronizer;
+
+  std::shared_ptr<ApproximateSynchronizer> m_approximateSync;
+  std::shared_ptr<ExactSynchronizer> m_exactSync;
+
+  void handleClouds(
+    const sensor_msgs::PointCloud2ConstPtr & edges,
+    const sensor_msgs::PointCloud2ConstPtr & surfaces);
+
+  bool m_isInitialized = false;
+  bool m_useExactSync = false;
+
+  int m_queueSize = 5;
+
+  floam::lidar::Total m_totals;
 
 private:
   floam::odom::OdomEstimation m_odomEstimation;
-  std::mutex m_mutexLock;
-  std::queue<sensor_msgs::PointCloud2ConstPtr> m_pointsEdge;
-  std::queue<sensor_msgs::PointCloud2ConstPtr> m_pointsSurface;
-  floam::lidar::Lidar m_lidar;
 };
 
 }  // namespace odom

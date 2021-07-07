@@ -1,7 +1,9 @@
-// Author of FLOAM: Wang Han 
+
+/// Major rewrite Author: Evan Flynn
+
+// Original Author of FLOAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
-
 #ifndef FLOAM__LIDAR_MAPPING_HPP_
 #define FLOAM__LIDAR_MAPPING_HPP_
 

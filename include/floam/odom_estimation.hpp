@@ -1,6 +1,10 @@
-// Author of FLOAM: Wang Han 
+
+/// Major rewrite Author: Evan Flynn
+
+// Original Author of FLOAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
+
 #ifndef FLOAM__ODOM_ESTIMATION_HPP_
 #define FLOAM__ODOM_ESTIMATION_HPP_
 
@@ -29,7 +33,6 @@
 #include <Eigen/Geometry>
 
 //LOCAL LIB
-#include "floam/lidar_imager.hpp"
 #include "floam/lidar_optimization.hpp"
 
 #include <ros/ros.h>
@@ -39,49 +42,71 @@ namespace floam
 namespace odom
 {
 
-
+/// Odometry Estimation Class
+///
+/// Can be used across all lidar types
+///
 class OdomEstimation
 {
+public:
+  void init(double mapResolution);	
+  void initMapWithPoints(const pcl::PointCloud<pcl::PointXYZI>::Ptr & edges, const pcl::PointCloud<pcl::PointXYZI>::Ptr& surfaces);
+  void updatePointsToMap(const pcl::PointCloud<pcl::PointXYZI>::Ptr & edges, const pcl::PointCloud<pcl::PointXYZI>::Ptr& surfaces);
+  void getMap(pcl::PointCloud<pcl::PointXYZI>::Ptr & lidarCloudMap);
 
-    public:
-    	OdomEstimation();
+  /// optimization variable
+  double m_parameters[7] = {0, 0, 0, 1, 0, 0, 0};
+  Eigen::Map<Eigen::Quaterniond> m_currentQW = Eigen::Map<Eigen::Quaterniond>(m_parameters);
+  Eigen::Map<Eigen::Vector3d> m_currentTW = Eigen::Map<Eigen::Vector3d>(m_parameters + 4);
 
-		void init(floam::lidar::ImagingLidar lidar_param, double map_resolution);	
-		void initMapWithPoints(const pcl::PointCloud<pcl::PointXYZI>::Ptr& edge_in, const pcl::PointCloud<pcl::PointXYZI>::Ptr& surf_in);
-		void updatePointsToMap(const pcl::PointCloud<pcl::PointXYZI>::Ptr& edge_in, const pcl::PointCloud<pcl::PointXYZI>::Ptr& surf_in);
-		void getMap(pcl::PointCloud<pcl::PointXYZI>::Ptr& lidarCloudMap);
+  /// kd-tree
+  pcl::KdTreeFLANN<pcl::PointXYZI>::Ptr m_kdTreeEdgeMap;
+  pcl::KdTreeFLANN<pcl::PointXYZI>::Ptr m_kdTreeSurfMap;
 
-		Eigen::Isometry3d odom;
-		pcl::PointCloud<pcl::PointXYZI>::Ptr lidarCloudCornerMap;
-		pcl::PointCloud<pcl::PointXYZI>::Ptr lidarCloudSurfMap;
-	private:
-		//optimization variable
-		double parameters[7] = {0, 0, 0, 1, 0, 0, 0};
-		Eigen::Map<Eigen::Quaterniond> q_w_curr = Eigen::Map<Eigen::Quaterniond>(parameters);
-		Eigen::Map<Eigen::Vector3d> t_w_curr = Eigen::Map<Eigen::Vector3d>(parameters + 4);
+  /// Odometry
+  Eigen::Isometry3d m_odom;
+  Eigen::Isometry3d m_lastOdom;
 
-		Eigen::Isometry3d last_odom;
+  /// corner and surface map objects
+  pcl::PointCloud<pcl::PointXYZI>::Ptr m_lidarCloudCornerMap;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr m_lidarCloudSurfMap;
 
-		//kd-tree
-		pcl::KdTreeFLANN<pcl::PointXYZI>::Ptr kdtreeEdgeMap;
-		pcl::KdTreeFLANN<pcl::PointXYZI>::Ptr kdtreeSurfMap;
+  /// points downsampling before add to map
+  pcl::VoxelGrid<pcl::PointXYZI> m_downSizeFilterEdge;
+  pcl::VoxelGrid<pcl::PointXYZI> m_downSizeFilterSurf;
 
-		//points downsampling before add to map
-		pcl::VoxelGrid<pcl::PointXYZI> downSizeFilterEdge;
-		pcl::VoxelGrid<pcl::PointXYZI> downSizeFilterSurf;
+  /// local map
+  pcl::CropBox<pcl::PointXYZI> m_cropBoxFilter;
 
-		//local map
-		pcl::CropBox<pcl::PointXYZI> cropBoxFilter;
+  /// optimization count 
+  int m_optimizationCount;
 
-		//optimization count 
-		int optimization_count;
+  /// function
+  void addEdgeCostFactor(
+	const pcl::PointCloud<pcl::PointXYZI>::Ptr & points,
+	const pcl::PointCloud<pcl::PointXYZI>::Ptr & map,
+	ceres::Problem& problem,
+	ceres::LossFunction * lossFunction);
 
-		//function
-		void addEdgeCostFactor(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_in, const pcl::PointCloud<pcl::PointXYZI>::Ptr& map_in, ceres::Problem& problem, ceres::LossFunction *loss_function);
-		void addSurfCostFactor(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_in, const pcl::PointCloud<pcl::PointXYZI>::Ptr& map_in, ceres::Problem& problem, ceres::LossFunction *loss_function);
-		void addPointsToMap(const pcl::PointCloud<pcl::PointXYZI>::Ptr& downsampledEdgeCloud, const pcl::PointCloud<pcl::PointXYZI>::Ptr& downsampledSurfCloud);
-		void pointAssociateToMap(pcl::PointXYZI const *const pi, pcl::PointXYZI *const po);
-		void downSamplingToMap(const pcl::PointCloud<pcl::PointXYZI>::Ptr& edge_pc_in, pcl::PointCloud<pcl::PointXYZI>::Ptr& edge_pc_out, const pcl::PointCloud<pcl::PointXYZI>::Ptr& surf_pc_in, pcl::PointCloud<pcl::PointXYZI>::Ptr& surf_pc_out);
+  void addSurfCostFactor(
+	const pcl::PointCloud<pcl::PointXYZI>::Ptr & points,
+	const pcl::PointCloud<pcl::PointXYZI>::Ptr & map,
+	ceres::Problem & problem,
+	ceres::LossFunction * lossFunction);
+
+  void addPointsToMap(
+	const pcl::PointCloud<pcl::PointXYZI>::Ptr & downsampledEdgeCloud,
+	const pcl::PointCloud<pcl::PointXYZI>::Ptr & downsampledSurfCloud);
+
+  void pointAssociateToMap(
+	pcl::PointXYZI const * const pointsIn,
+	pcl::PointXYZI * const pointsOut);
+
+  void downSamplingToMap(
+	const pcl::PointCloud<pcl::PointXYZI>::Ptr & edgesIn,
+	pcl::PointCloud<pcl::PointXYZI>::Ptr & edgesOut,
+	const pcl::PointCloud<pcl::PointXYZI>::Ptr & surfacesIn,
+	pcl::PointCloud<pcl::PointXYZI>::Ptr & surfacesOut);
 };
 }  // namespace odom
 }  // namespace floam

@@ -1,3 +1,6 @@
+
+/// Major rewrite Author: Evan Flynn
+
 #include "floam/lidar_utils.hpp"
 
 namespace floam

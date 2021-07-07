@@ -1,6 +1,7 @@
-// Significant re-wrte by Evan Flynn 2021
 
-// Author of FLOAM: Wang Han 
+/// Major rewrite Author: Evan Flynn
+
+// Original Author of FLOAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
 

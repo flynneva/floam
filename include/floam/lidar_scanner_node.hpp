@@ -1,4 +1,7 @@
-// Author of FLOAM: Wang Han 
+
+/// Major rewrite Author: Evan Flynn
+
+// Original Author of FLOAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
 #ifndef FLOAM__LIDAR_SCANNER_NODE_HPP_
@@ -32,6 +35,8 @@ public:
 
   void handlePoints(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg);
 
+  Lidar<floam::lidar::Scanner> m_lidar;
+
 private:
   ros::NodeHandle m_nodeHandle;
 
@@ -42,8 +47,6 @@ private:
   ros::Publisher m_pubPointsFiltered;
 
   std::queue<sensor_msgs::PointCloud2ConstPtr> m_points;
-
-  Lidar<floam::lidar::Scanner> m_lidar;
 };
 
 }  // namespace lidar

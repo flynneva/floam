@@ -1,3 +1,10 @@
+
+/// Major rewrite Author: Evan Flynn
+
+// Original Author of FLOAM: Wang Han 
+// Email wh200720041@gmail.com
+// Homepage https://wanghan.pro
+
 #include <pcl/features/organized_edge_detection.h>
 #include <pcl/features/integral_image_normal.h>
 

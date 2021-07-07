@@ -1,6 +1,7 @@
-// Significant re-wrte by Evan Flynn 2021
 
-// Author of FLOAM: Wang Han 
+/// Major rewrite Author: Evan Flynn
+
+// Original Author of FLOAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
 #ifndef FLOAM__LIDAR_IMAGER_NODE_HPP_
@@ -34,6 +35,8 @@ public:
 
   void handlePoints(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg);
 
+  Lidar<floam::lidar::Imager> m_lidar;
+
 private:
   ros::NodeHandle m_nodeHandle;
 
@@ -45,7 +48,6 @@ private:
 
   std::queue<sensor_msgs::PointCloud2ConstPtr> m_points;
 
-  Lidar<floam::lidar::Imager> m_lidar;
 };
 
 }  // namespace lidar
