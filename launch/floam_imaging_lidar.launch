@@ -6,7 +6,7 @@
     <arg name="node_name" default="floam" />
     <arg name="manager_name" value="$(arg node_name)_manager" />
     <arg name="global_manager_name" value="/$(arg manager_name)" />
-    <arg name="new_manager" default="false" />
+    <arg name="new_manager" default="true" />
 
     
     <!-- Nodelet Manager -->

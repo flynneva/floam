@@ -1,5 +1,12 @@
 <?xml version="1.0"?>
 <launch>
+    <!-- floam odom arguments -->
+    <arg name="use_exact_sync" default="false" />
+    <arg name="queue_size" default="5" />
+    <arg name="map_resolution" default="5" />
+    <arg name="edge_cloud_topic" default="/points_edge" />
+    <arg name="surface_cloud_topic" default="/points_surface" />
+
     <!-- Node Manager Arguments -->
     <arg name="node_name" value="floam" />
     <arg name="manager_name" value="$(arg node_name)_manager" />
@@ -11,6 +18,14 @@
 
     <!-- floam odom node -->
     <node pkg="nodelet" type="nodelet" name="$(arg node_name)_odom_node"
-      args="load floam/odom/OdomEstimationNode $(arg global_manager_name)" output="screen"/>
+      args="load floam/odom/OdomEstimationNode $(arg global_manager_name)" output="screen">
+      <param name="use_exact_sync" value="$(arg use_exact_sync)" />
+      <param name="queue_size" value="$(arg queue_size)" />
+      <param name="map_resolution" value="$(arg map_resolution)" />
+
+      <!-- input topics -->
+      <remap from="points_edge" to="$(arg edge_cloud_topic)" />
+      <remap from="points_surface" to="$(arg surface_cloud_topic)" />
+    </node>
 
 </launch>

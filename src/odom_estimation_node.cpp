@@ -49,7 +49,7 @@ void OdomEstimationNode::onInit()
 
   m_odomEstimation.init(map_resolution);
 
-  // should these topic names parameters?
+  // should these topic names parameters instead of remapped?
   message_filters::Subscriber<sensor_msgs::PointCloud2> subEdges(m_nodeHandle, "points_edge", 100);
   message_filters::Subscriber<sensor_msgs::PointCloud2> subSurfaces(m_nodeHandle, "points_surface", 100);
  
@@ -62,6 +62,9 @@ void OdomEstimationNode::onInit()
       std::bind(&OdomEstimationNode::handleClouds, this, std::placeholders::_1, std::placeholders::_2));
   } else {
     ROS_INFO("Approximate Synchronization Policy chosen");
+    m_approximateSync.reset(new ApproximateSynchronizer(ApproximateSyncPolicy(m_queueSize), subEdges, subSurfaces));
+    m_approximateSync->registerCallback(
+      std::bind(&OdomEstimationNode::handleClouds, this, std::placeholders::_1, std::placeholders::_2));
   }
 }
 
