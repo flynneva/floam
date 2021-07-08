@@ -49,12 +49,13 @@ void OdomEstimationNode::onInit()
 
   m_odomEstimation.init(map_resolution);
 
-  // should these topic names parameters instead of remapped?
+  // should these topic names be parameters instead of remapped?
   message_filters::Subscriber<sensor_msgs::PointCloud2> subEdges(m_nodeHandle, "points_edge", 100);
   message_filters::Subscriber<sensor_msgs::PointCloud2> subSurfaces(m_nodeHandle, "points_surface", 100);
  
   m_pubLidarOdometry = m_nodeHandle.advertise<nav_msgs::Odometry>("odom", 100);
   
+  // initialize callbacks using sync policy
   if (m_useExactSync) {
     ROS_INFO("Exact Synchronization Policy chosen");
     m_exactSync.reset(new ExactSynchronizer(ExactSyncPolicy(m_queueSize), subEdges, subSurfaces));

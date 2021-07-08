@@ -102,19 +102,28 @@ target_link_libraries(${PROJECT_NAME}_odom_node
   ${CERES_LIBRARIES}
 )
 
-#
-#add_library(${PROJECT_NAME}_mapping_node
-#  src/lidar_mapping_node.cpp
-#  src/lidar_mapping.cpp
-#  src/lidar.cpp
-#)
-#
-#target_link_libraries(${PROJECT_NAME}_mapping_node
-#  ${catkin_LIBRARIES}
-#  ${EIGEN3_LIBRARIES} 
-#  ${PCL_LIBRARIES}
-#  ${CERES_LIBRARIES}
-#)
+add_library(${PROJECT_NAME}_mapping
+  src/lidar_mapping.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}_mapping
+  ${catkin_LIBRARIES}
+  ${EIGEN3_LIBRARIES} 
+  ${PCL_LIBRARIES}
+  ${CERES_LIBRARIES}
+)
+
+add_library(${PROJECT_NAME}_mapping_node
+  src/lidar_mapping_node.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}_mapping_node
+  ${PROJECT_NAME}_mapping
+  ${catkin_LIBRARIES}
+  ${EIGEN3_LIBRARIES} 
+  ${PCL_LIBRARIES}
+  ${CERES_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -125,7 +134,8 @@ install(TARGETS
   ${PROJECT_NAME}_lidar_node
   ${PROJECT_NAME}_odom
   ${PROJECT_NAME}_odom_node
-  #${PROJECT_NAME}_mapping_node
+  ${PROJECT_NAME}_mapping
+  ${PROJECT_NAME}_mapping_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -8,59 +8,69 @@
 #ifndef FLOAM__LIDAR_MAPPING_NODE_HPP_
 #define FLOAM__LIDAR_MAPPING_NODE_HPP_
 
-//c++ lib
-#include <cmath>
-#include <vector>
-#include <mutex>
-#include <queue>
-#include <thread>
-#include <chrono>
-
-//ros lib
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/exact_time.h>
+#include <message_filters/sync_policies/approximate_time.h>
 
-//pcl lib
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-//local lib
 #include "floam/lidar_mapping.hpp"
-#include "floam/lidar_imager.hpp"
-#include "floam/lidar_scanner.hpp"
+#include "floam/lidar_utils.hpp"
 
 namespace floam
 {
 namespace lidar
 {
 
+typedef message_filters::sync_policies::ExactTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> ExactSyncPolicy;
+typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> ApproximateSyncPolicy;
+
 class LidarMappingNode : public nodelet::Nodelet
 {
 public:
+  ///
+  /// LidarMappingNode constructor
+  ///
   LidarMappingNode();
+
+  ///
+  /// LidarMappingNode constructor
+  ///
   ~LidarMappingNode();
 
+  ///
+  /// Initialize Nodelet member variables
+  ///
+  /// @return void
+  ///
   void onInit();
-
-  void handleOdom(const nav_msgs::Odometry::ConstPtr &msg);
-  void handlePoints(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg);
-  void mapping();
 
 private:
   ros::NodeHandle m_nodeHandle;
   ros::Publisher m_pubMap;
-  ros::Subscriber m_subPoints, m_subOdom;
+
+  typedef message_filters::Synchronizer<ApproximateSyncPolicy> ApproximateSynchronizer;
+  typedef message_filters::Synchronizer<ExactSyncPolicy> ExactSynchronizer;
+
+  std::shared_ptr<ApproximateSynchronizer> m_approximateSync;
+  std::shared_ptr<ExactSynchronizer> m_exactSync;
+
+  void generateMap(
+    const nav_msgs::OdometryConstPtr & odom,
+    const sensor_msgs::PointCloud2ConstPtr & cloud);
 
   LidarMapping m_lidarMapping;
-  ImagingLidar m_lidar;
-  std::mutex m_mutexLock;
-  std::queue<nav_msgs::OdometryConstPtr> m_odometry;
-  std::queue<sensor_msgs::PointCloud2ConstPtr> m_points;
+
+  bool m_useExactSync = false;
+  int m_queueSize = 5;
 };
 
 }  // namespace lidar
