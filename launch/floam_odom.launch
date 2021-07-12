@@ -4,8 +4,8 @@
     <arg name="use_exact_sync" default="false" />
     <arg name="queue_size" default="5" />
     <arg name="map_resolution" default="5" />
-    <arg name="edge_cloud_topic" default="/points_edge" />
-    <arg name="surface_cloud_topic" default="/points_surface" />
+    <arg name="edge_cloud_topic" default="/floam_lidar_node/points_edge" />
+    <arg name="surface_cloud_topic" default="/floam_lidar_node/points_surface" />
 
     <!-- Node Manager Arguments -->
     <arg name="node_name" value="floam" />

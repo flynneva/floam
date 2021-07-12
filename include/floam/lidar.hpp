@@ -8,6 +8,7 @@
 #define FLOAM__LIDAR_HPP_
 #include <pcl/features/organized_edge_detection.h>
 #include <pcl/features/integral_image_normal.h>
+#include <pcl/filters/conditional_removal.h>
 
 #include "floam/lidar_utils.hpp"
 
@@ -61,13 +62,35 @@ void Lidar<floam::lidar::Imager>::detectSurfaces(
 template <>
 void Lidar<floam::lidar::Scanner>::detectEdges(
   const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
-  pcl::PointCloud<pcl::PointXYZL>::Ptr & edges);
+  pcl::PointCloud<pcl::PointXYZL>::Ptr  & edges);
 
 /// overload detectEdges for Imager type
 template <>
 void Lidar<floam::lidar::Imager>::detectEdges(
   const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
   pcl::PointCloud<pcl::PointXYZL>::Ptr & edges);
+
+/// taken from the example here (thanks, Davide!)
+/// https://cpp-optimizations.netlify.app/pcl_filter/
+template <typename PointT>
+class GenericCondition : public pcl::ConditionBase<PointT>
+{
+public:
+  typedef std::shared_ptr<GenericCondition<PointT>> Ptr;
+  typedef std::shared_ptr<const GenericCondition<PointT>> ConstPtr;
+  typedef std::function<bool(const PointT&)> FunctorT;
+
+  GenericCondition(FunctorT evaluator): 
+    pcl::ConditionBase<PointT>(),_evaluator( evaluator ) 
+  {}
+
+  virtual bool evaluate (const PointT &point) const {
+    // just delegate ALL the work to the injected std::function
+    return _evaluator(point);
+  }
+private:
+  FunctorT _evaluator;
+};
 
 }  // namespace lidar
 }  // namespace floam

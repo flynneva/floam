@@ -147,15 +147,15 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
           return a.value < b.value;
         });
 
-      for (int k = 0; k < subCloudCurvature.size(); k++) {
+      for (int k = 0; k < (int)subCloudCurvature.size(); k++) {
         // get index of point
         index = subCloudCurvature[k].id;
         pcl::PointXYZL tempPointL;
         tempPointL.x = lidarScans[i]->points[index].x;
         tempPointL.y = lidarScans[i]->points[index].y;
         tempPointL.z = lidarScans[i]->points[index].z;
-        if (subCloudCurvature[k].value <= 0.1) {
-          // 0 is not an edge
+        if (subCloudCurvature[k].value <= 0.05) {
+          // 0 is not an edge (is it a surface then?)
           tempPointL.label = 0;
         } else {
           // cloudCurvature[i].value is > 0.1

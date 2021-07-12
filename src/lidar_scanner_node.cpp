@@ -25,11 +25,12 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/filter.h>
+#include <pcl/filters/conditional_removal.h>
 
 //local lib
 #include "floam/lidar_scanner_node.hpp"
 #include "floam/lidar.hpp"
-
+#include "floam/lidar_utils.hpp"
 
 namespace floam
 {
@@ -98,11 +99,39 @@ void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & po
   start = std::chrono::system_clock::now();
 
   // initialize edge and surface clouds
-  pcl::PointCloud<pcl::PointXYZL>::Ptr edges(new pcl::PointCloud<pcl::PointXYZL>());          
-  pcl::PointCloud<pcl::PointNormal>::Ptr normals(new pcl::PointCloud<pcl::PointNormal>());
+  pcl::PointCloud<pcl::PointXYZL>::Ptr edgesAndSurfaces(new pcl::PointCloud<pcl::PointXYZL>());          
+  pcl::PointCloud<pcl::PointXYZL>::Ptr surfaces(new pcl::PointCloud<pcl::PointXYZL>());
+  pcl::PointCloud<pcl::PointXYZL>::Ptr edges(new pcl::PointCloud<pcl::PointXYZL>());
 
-  m_lidar.detectSurfaces(cloud, normals);
-  m_lidar.detectEdges(cloud, edges);
+  // for scanners, edge pointcloud should also include surface information
+  m_lidar.detectEdges(cloud, edgesAndSurfaces);
+  // m_lidar.detectSurfaces(cloud, normals);
+
+  // separate edge cloud into edge and surface clouds
+  auto edge_cond = pcl::make_shared<floam::lidar::GenericCondition<pcl::PointXYZL>>(
+    [](const pcl::PointXYZL & point) {
+      return point.label > 0;
+    }
+  );
+
+  auto surface_cond = pcl::make_shared<floam::lidar::GenericCondition<pcl::PointXYZL>>(
+    [](const pcl::PointXYZL & point) {
+      return point.label == 0;
+    }
+  );
+
+  // remove surfaces to get edges
+  pcl::ConditionalRemoval<pcl::PointXYZL> surface_removal;
+  pcl::ConditionalRemoval<pcl::PointXYZL> edge_removal;
+
+  surface_removal.setCondition(edge_cond);
+  surface_removal.setInputCloud(edgesAndSurfaces);
+  surface_removal.filter(*edges);
+
+  edge_removal.setCondition(surface_cond);
+  edge_removal.setInputCloud(edgesAndSurfaces);
+  edge_removal.filter(*surfaces);
+
 
   std::vector <pcl::PointIndices> labelIndices;
 
@@ -123,7 +152,7 @@ void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & po
 
   // convert surface pcl to ROS message
   sensor_msgs::PointCloud2 surfacePoints;
-  pcl::toROSMsg(*normals, surfacePoints);
+  pcl::toROSMsg(*surfaces, surfacePoints);
 
   // set header information
   edgePoints.header = points->header;
