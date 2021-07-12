@@ -44,7 +44,7 @@ private:
 
   ros::Publisher m_pubEdgePoints;
   ros::Publisher m_pubSurfacePoints;
-  ros::Publisher m_pubPointsFiltered;
+  ros::Publisher m_pubEdgesAndSurfaces;
 
   std::queue<sensor_msgs::PointCloud2ConstPtr> m_points;
 };

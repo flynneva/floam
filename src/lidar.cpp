@@ -154,11 +154,10 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
         tempPointL.x = lidarScans[i]->points[index].x;
         tempPointL.y = lidarScans[i]->points[index].y;
         tempPointL.z = lidarScans[i]->points[index].z;
-        if (subCloudCurvature[k].value <= 0.05) {
-          // 0 is not an edge (is it a surface then?)
+        if (subCloudCurvature[k].value <= m_settings.common.limits.edgeThreshold) {
+          // value is small, is not an edge and assume its a surface
           tempPointL.label = 0;
         } else {
-          // cloudCurvature[i].value is > 0.1
           // value is large so this sector is very curved or could be an edge
           tempPointL.label = 1;  // edgesCount;
         }

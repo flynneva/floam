@@ -30,6 +30,7 @@ struct Distance {
 struct Limits {
   Distance distance;
   int sectors;
+  double edgeThreshold;
 };
 
 struct AngularResolution {

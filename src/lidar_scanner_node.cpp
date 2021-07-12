@@ -50,7 +50,7 @@ ScanningLidarNode::~ScanningLidarNode()
 void ScanningLidarNode::onInit()
 {
     m_nodeHandle = getPrivateNodeHandle();
-
+    // defaults
     std::string points_topic = "points";
     int scan_lines = 64;
     double vertical_angle = 2.0;
@@ -58,6 +58,7 @@ void ScanningLidarNode::onInit()
     double scan_period= 0.1;
     double max_dis = 60.0;
     double min_dis = 2.0;
+    double edgeThreshold = 0.05;
 
     m_nodeHandle.getParam("points_topic", points_topic);
     m_nodeHandle.getParam("scan_period", scan_period);
@@ -66,9 +67,11 @@ void ScanningLidarNode::onInit()
     m_nodeHandle.getParam("max_dis", max_dis);
     m_nodeHandle.getParam("min_dis", min_dis);
     m_nodeHandle.getParam("scan_lines", scan_lines);
+    m_nodeHandle.getParam("edgeThreshold", edgeThreshold);
 
     m_lidar.m_settings.period = scan_period;
     m_lidar.m_settings.lines = scan_lines;
+    m_lidar.m_settings.common.limits.edgeThreshold = edgeThreshold;
     m_lidar.m_settings.common.fov.vertical = vertical_angle;
     m_lidar.m_settings.common.fov.horizontal = horizontal_angle;
     m_lidar.m_settings.common.limits.distance.max = max_dis;
@@ -77,8 +80,8 @@ void ScanningLidarNode::onInit()
     m_subPoints = m_nodeHandle.subscribe(points_topic, 100, &ScanningLidarNode::handlePoints, this);
 
     m_pubEdgePoints = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("points_edge", 100);
-
     m_pubSurfacePoints = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("points_surface", 100); 
+    m_pubEdgesAndSurfaces = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("edges_and_surfaces", 100); 
 
     //std::thread lidar_processing_process{floam::lidar::lidar_processing};
 }
@@ -154,13 +157,19 @@ void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & po
   sensor_msgs::PointCloud2 surfacePoints;
   pcl::toROSMsg(*surfaces, surfacePoints);
 
+  // convert edges and surfaces pcl to ROS message
+  sensor_msgs::PointCloud2 edgesAndSurfaceMsg;
+  pcl::toROSMsg(*edgesAndSurfaces, edgesAndSurfaceMsg);
+
   // set header information
   edgePoints.header = points->header;
   surfacePoints.header = points->header;
+  edgesAndSurfaceMsg.header = points->header;
 
   // publish filtered, edge and surface clouds
   m_pubEdgePoints.publish(edgePoints);
   m_pubSurfacePoints.publish(surfacePoints);
+  m_pubEdgesAndSurfaces.publish(edgesAndSurfaceMsg);
 }
 
 }  // namespace lidar
