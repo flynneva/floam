@@ -29,6 +29,7 @@ struct Distance {
 
 struct Limits {
   Distance distance;
+  int sectors;
 };
 
 struct AngularResolution {
@@ -79,6 +80,22 @@ struct Surface {
 struct Edge {
   pcl::PointCloud<pcl::PointXYZ>::Ptr points;
   pcl::PointCloud<pcl::Label>::Ptr labels;
+};
+
+//points covariance class
+class Double2d{
+public:
+	int id;
+	double value;
+	Double2d(int id_in, double value_in);
+};
+
+//points info class
+class PointsInfo{
+public:
+	int layer;
+	double time;
+	PointsInfo(int layer_in, double time_in);
 };
 
 }  // namespace lidar

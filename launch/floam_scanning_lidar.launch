@@ -6,7 +6,9 @@
     <arg name="node_name" default="floam" />
     <arg name="manager_name" value="$(arg node_name)_manager" />
     <arg name="global_manager_name" value="/$(arg manager_name)" />
-    <arg name="new_manager" default="false" />
+    <arg name="new_manager" default="true" />
+    <arg name="max_distance" default="1000" />
+    <arg name="min_distance" default="0.0" />
 
     
     <!-- Nodelet Manager -->
@@ -17,16 +19,11 @@
       args="load floam/lidar/ScanningLidarNode $(arg global_manager_name)" output="screen">
         <param name="points_topic" value="$(arg points_topic)" />
 
-        <param name="max_dis" type="double" value="90.0" />
-        <param name="min_dis" type="double" value="0.5" />
+        <param name="max_dis" type="double" value="$(arg max_distance)" />
+        <param name="min_dis" type="double" value="$(arg min_distance)" />
     </node>
   
     <node pkg="tf" type="static_transform_publisher" name="map2_baselink_tf"  args="0 0 0 0 0 0 /map /base_link 10" />
-    
-    <arg name="rviz" default="true" />
-    <group if="$(arg rviz)">
-        <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find floam)/rviz/floam.rviz" />
-    </group>
 
     <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server_loam" ns="base_link" >
         <param name="/target_frame_name" value="map" />

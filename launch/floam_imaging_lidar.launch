@@ -7,8 +7,9 @@
     <arg name="manager_name" value="$(arg node_name)_manager" />
     <arg name="global_manager_name" value="/$(arg manager_name)" />
     <arg name="new_manager" default="true" />
+    <arg name="max_distance" default="90" />
+    <arg name="min_distance" default="0.5" />
 
-    
     <!-- Nodelet Manager -->
     <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" if="$(arg new_manager)" />
 
@@ -17,8 +18,8 @@
       args="load floam/lidar/ImagingLidarNode $(arg global_manager_name)" output="screen">
         <param name="points_topic" value="$(arg points_topic)" />
 
-        <param name="max_dis" type="double" value="90.0" />
-        <param name="min_dis" type="double" value="0.5" />
+        <param name="max_dis" type="double" value="$(arg max_distance)" />
+        <param name="min_dis" type="double" value="$(arg min_distance)" />
     </node>
   
     <node pkg="tf" type="static_transform_publisher" name="map2_baselink_tf"  args="0 0 0 0 0 0 /map /base_link 10" />

@@ -28,7 +28,7 @@ public:
   ///
   void detectSurfaces(
     const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
-    const pcl::PointCloud<pcl::Normal>::Ptr & normals);
+    pcl::PointCloud<pcl::PointNormal>::Ptr & normals);
 
   /// Detects edges from input pointcloud
   ///
@@ -37,10 +37,10 @@ public:
   ///
   void detectEdges(
     const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
-    const pcl::PointCloud<pcl::Label>::Ptr & edges);
+    pcl::PointCloud<pcl::PointXYZL>::Ptr & edges);
 
   /// Settings for specific Lidar type
-  T m_setting;
+  T m_settings;
   /// Total counters (i.e. frames and time)
   floam::lidar::Total m_total;
 };
@@ -49,25 +49,25 @@ public:
 template <>
 void Lidar<floam::lidar::Scanner>::detectSurfaces(
   const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
-  const pcl::PointCloud<pcl::Normal>::Ptr & normals);
+  pcl::PointCloud<pcl::PointNormal>::Ptr & normals);
 
 /// overload detectSurfaces for Imager type
 template <>
 void Lidar<floam::lidar::Imager>::detectSurfaces(
   const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
-  const pcl::PointCloud<pcl::Normal>::Ptr & normals);
+  pcl::PointCloud<pcl::PointNormal>::Ptr & normals);
 
 /// overload detectEdges for Scanner type
 template <>
 void Lidar<floam::lidar::Scanner>::detectEdges(
   const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
-  const pcl::PointCloud<pcl::Label>::Ptr & edges);
+  pcl::PointCloud<pcl::PointXYZL>::Ptr & edges);
 
 /// overload detectEdges for Imager type
 template <>
 void Lidar<floam::lidar::Imager>::detectEdges(
   const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
-  const pcl::PointCloud<pcl::Label>::Ptr & edges);
+  pcl::PointCloud<pcl::PointXYZL>::Ptr & edges);
 
 }  // namespace lidar
 }  // namespace floam

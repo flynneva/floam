@@ -65,11 +65,11 @@ void ImagingLidarNode::onInit()
     m_nodeHandle.getParam("min_dis", min_dis);
     m_nodeHandle.getParam("framerate", framerate);
 
-    m_lidar.m_setting.framerate = framerate;
-    m_lidar.m_setting.common.fov.vertical = vertical_angle;
-    m_lidar.m_setting.common.fov.horizontal = horizontal_angle;
-    m_lidar.m_setting.common.limits.distance.max = max_dis;
-    m_lidar.m_setting.common.limits.distance.min = min_dis;
+    m_lidar.m_settings.framerate = framerate;
+    m_lidar.m_settings.common.fov.vertical = vertical_angle;
+    m_lidar.m_settings.common.fov.horizontal = horizontal_angle;
+    m_lidar.m_settings.common.limits.distance.max = max_dis;
+    m_lidar.m_settings.common.limits.distance.min = min_dis;
     
     ROS_INFO("SUBSCRIBE");
     m_subPoints = m_nodeHandle.subscribe(points_topic, 100, &ImagingLidarNode::handlePoints, this);
@@ -90,12 +90,8 @@ void ImagingLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & poi
   start = std::chrono::system_clock::now();
 
   // initialize edge and surface clouds
-  pcl::PointCloud<pcl::PointXYZL>::Ptr pointcloud_edge(new pcl::PointCloud<pcl::PointXYZL>());          
-  pcl::PointCloud<pcl::PointNormal>::Ptr pointcloud_surface(new pcl::PointCloud<pcl::PointNormal>());
-
-  // compute edges and surfaces
-  pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
-  pcl::PointCloud <pcl::Label>::Ptr edges(new pcl::PointCloud<pcl::Label>);
+  pcl::PointCloud<pcl::PointXYZL>::Ptr edges(new pcl::PointCloud<pcl::PointXYZL>());          
+  pcl::PointCloud<pcl::PointNormal>::Ptr normals(new pcl::PointCloud<pcl::PointNormal>());
 
   m_lidar.detectSurfaces(cloud, normals);
   m_lidar.detectEdges(cloud, edges);
@@ -113,17 +109,13 @@ void ImagingLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & poi
   m_lidar.m_total.time += time_temp;
   // ROS_INFO("average lidar processing time %f ms", m_lidar.m_total.time / m_lidar.m_total.frames);
 
-  // combine xyz cloud with surface normals and edges
-  pcl::concatenateFields(*cloud, *edges, *pointcloud_edge);
-  pcl::concatenateFields(*cloud, *normals, *pointcloud_surface);
-
   // convert edge pcl to ROS message
   sensor_msgs::PointCloud2 edgePoints;
-  pcl::toROSMsg(*pointcloud_edge, edgePoints);
+  pcl::toROSMsg(*edges, edgePoints);
 
   // convert surface pcl to ROS message
   sensor_msgs::PointCloud2 surfacePoints;
-  pcl::toROSMsg(*pointcloud_surface, surfacePoints);
+  pcl::toROSMsg(*normals, surfacePoints);
 
   // set header information
   edgePoints.header = points->header;
