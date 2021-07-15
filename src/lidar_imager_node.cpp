@@ -48,10 +48,10 @@ ImagingLidarNode::~ImagingLidarNode()
 
 void ImagingLidarNode::onInit()
 {
-    ROS_INFO("INIT");
     m_nodeHandle = getPrivateNodeHandle();
 
     std::string points_topic = "points";
+    std::string frameId = "base_link";
     double vertical_angle = 2.0;
     double horizontal_angle = 120.0;
     double max_dis = 60.0;
@@ -64,14 +64,16 @@ void ImagingLidarNode::onInit()
     m_nodeHandle.getParam("max_dis", max_dis);
     m_nodeHandle.getParam("min_dis", min_dis);
     m_nodeHandle.getParam("framerate", framerate);
+    m_nodeHandle.getParam("frame_id", frameId);
+
 
     m_lidar.m_settings.framerate = framerate;
+    m_lidar.m_settings.common.frameId = frameId;
     m_lidar.m_settings.common.fov.vertical = vertical_angle;
     m_lidar.m_settings.common.fov.horizontal = horizontal_angle;
     m_lidar.m_settings.common.limits.distance.max = max_dis;
     m_lidar.m_settings.common.limits.distance.min = min_dis;
     
-    ROS_INFO("SUBSCRIBE");
     m_subPoints = m_nodeHandle.subscribe(points_topic, 100, &ImagingLidarNode::handlePoints, this);
 
     m_pubEdgePoints = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("points_edge", 100);
@@ -120,6 +122,9 @@ void ImagingLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & poi
   // set header information
   edgePoints.header = points->header;
   surfacePoints.header = points->header;
+
+  edgePoints.header.frame_id = m_lidar.m_settings.common.frameId;
+  surfacePoints.header.frame_id = m_lidar.m_settings.common.frameId;
 
   // publish filtered, edge and surface clouds
   m_pubEdgePoints.publish(edgePoints);

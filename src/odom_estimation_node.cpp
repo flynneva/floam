@@ -49,21 +49,22 @@ void OdomEstimationNode::onInit()
 
   m_odomEstimation.init(map_resolution);
 
+  ROS_INFO_STREAM("odom nodehandle: " << m_nodeHandle.getNamespace());
   // should these topic names be parameters instead of remapped?
-  message_filters::Subscriber<sensor_msgs::PointCloud2> subEdges(m_nodeHandle, "points_edge", 100);
-  message_filters::Subscriber<sensor_msgs::PointCloud2> subSurfaces(m_nodeHandle, "points_surface", 100);
+  m_subEdges.subscribe(m_nodeHandle, "points_edge", 100);
+  m_subSurfaces.subscribe(m_nodeHandle, "points_surface", 100);
  
   m_pubLidarOdometry = m_nodeHandle.advertise<nav_msgs::Odometry>("odom", 100);
   
   // initialize callbacks using sync policy
   if (m_useExactSync) {
     ROS_INFO("Exact Synchronization Policy chosen");
-    m_exactSync.reset(new ExactSynchronizer(ExactSyncPolicy(m_queueSize), subEdges, subSurfaces));
+    m_exactSync.reset(new ExactSynchronizer(ExactSyncPolicy(m_queueSize), m_subEdges, m_subSurfaces));
     m_exactSync->registerCallback(
       std::bind(&OdomEstimationNode::handleClouds, this, std::placeholders::_1, std::placeholders::_2));
   } else {
     ROS_INFO("Approximate Synchronization Policy chosen");
-    m_approximateSync.reset(new ApproximateSynchronizer(ApproximateSyncPolicy(m_queueSize), subEdges, subSurfaces));
+    m_approximateSync.reset(new ApproximateSynchronizer(ApproximateSyncPolicy(m_queueSize), m_subEdges, m_subSurfaces));
     m_approximateSync->registerCallback(
       std::bind(&OdomEstimationNode::handleClouds, this, std::placeholders::_1, std::placeholders::_2));
   }
@@ -74,8 +75,8 @@ void OdomEstimationNode::handleClouds(
   const sensor_msgs::PointCloud2ConstPtr & surfaces_msg)
 {
   // convert to PCL msgs
-  pcl::PointCloud<pcl::PointXYZI>::Ptr pointcloud_surf_in(new pcl::PointCloud<pcl::PointXYZI>());
-  pcl::PointCloud<pcl::PointXYZI>::Ptr pointcloud_edge_in(new pcl::PointCloud<pcl::PointXYZI>());
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pointcloud_surf_in(new pcl::PointCloud<pcl::PointXYZ>());
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pointcloud_edge_in(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::fromROSMsg(*edges_msg, *pointcloud_edge_in);
   pcl::fromROSMsg(*surfaces_msg, *pointcloud_surf_in);
 
@@ -87,7 +88,7 @@ void OdomEstimationNode::handleClouds(
   if (m_isInitialized == false) {
       m_odomEstimation.initMapWithPoints(pointcloud_edge_in, pointcloud_surf_in);
       m_isInitialized = true;
-      ROS_INFO("odometry initialized");
+      ROS_INFO_ONCE("odometry initialized");
   } else {
       std::chrono::time_point<std::chrono::system_clock> start, end;
       start = std::chrono::system_clock::now();
@@ -109,7 +110,9 @@ void OdomEstimationNode::handleClouds(
   transform.setOrigin( tf::Vector3(t_current.x(), t_current.y(), t_current.z()) );
   tf::Quaternion q(q_current.x(),q_current.y(),q_current.z(),q_current.w());
   transform.setRotation(q);
-  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", "base_link"));
+
+  // TODO(flynneva): make base_link configurable?
+  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", "base_link")); 
   // publish odometry
   nav_msgs::Odometry lidarOdometry;
   lidarOdometry.header.frame_id = "map";

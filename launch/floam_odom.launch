@@ -11,10 +11,6 @@
     <arg name="node_name" value="floam" />
     <arg name="manager_name" value="$(arg node_name)_manager" />
     <arg name="global_manager_name" value="/$(arg manager_name)" />
-    <arg name="new_manager" default="false" />
-
-    <!-- Nodelet Manager -->
-    <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" if="$(arg new_manager)" />
 
     <!-- floam odom node -->
     <node pkg="nodelet" type="nodelet" name="$(arg node_name)_odom_node"
@@ -24,8 +20,8 @@
       <param name="map_resolution" value="$(arg map_resolution)" />
 
       <!-- input topics -->
-      <remap from="points_edge" to="$(arg edge_cloud_topic)" />
-      <remap from="points_surface" to="$(arg surface_cloud_topic)" />
+      <remap from="$(arg node_name)_odom_node/points_edge" to="$(arg edge_cloud_topic)" />
+      <remap from="$(arg node_name)_odom_node/points_surface" to="$(arg surface_cloud_topic)" />
     </node>
 
 </launch>

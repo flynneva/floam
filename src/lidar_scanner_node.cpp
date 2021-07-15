@@ -52,6 +52,7 @@ void ScanningLidarNode::onInit()
     m_nodeHandle = getPrivateNodeHandle();
     // defaults
     std::string points_topic = "points";
+    std::string frameId = "base_link";
     int scan_lines = 64;
     double vertical_angle = 2.0;
     double horizontal_angle = 360.0;
@@ -68,9 +69,11 @@ void ScanningLidarNode::onInit()
     m_nodeHandle.getParam("min_dis", min_dis);
     m_nodeHandle.getParam("scan_lines", scan_lines);
     m_nodeHandle.getParam("edgeThreshold", edgeThreshold);
+    m_nodeHandle.getParam("frame_id", frameId);
 
     m_lidar.m_settings.period = scan_period;
     m_lidar.m_settings.lines = scan_lines;
+    m_lidar.m_settings.common.frameId = frameId;
     m_lidar.m_settings.common.limits.edgeThreshold = edgeThreshold;
     m_lidar.m_settings.common.fov.vertical = vertical_angle;
     m_lidar.m_settings.common.fov.horizontal = horizontal_angle;
@@ -81,9 +84,7 @@ void ScanningLidarNode::onInit()
 
     m_pubEdgePoints = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("points_edge", 100);
     m_pubSurfacePoints = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("points_surface", 100); 
-    m_pubEdgesAndSurfaces = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("edges_and_surfaces", 100); 
-
-    //std::thread lidar_processing_process{floam::lidar::lidar_processing};
+    m_pubEdgesAndSurfaces = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("points_filtered", 100); 
 }
 
 void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & points)
@@ -165,6 +166,10 @@ void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & po
   edgePoints.header = points->header;
   surfacePoints.header = points->header;
   edgesAndSurfaceMsg.header = points->header;
+
+  edgePoints.header.frame_id = m_lidar.m_settings.common.frameId;
+  surfacePoints.header.frame_id = m_lidar.m_settings.common.frameId;
+  edgesAndSurfaceMsg.header.frame_id = m_lidar.m_settings.common.frameId;
 
   // publish filtered, edge and surface clouds
   m_pubEdgePoints.publish(edgePoints);

@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Runs the complete floam pipeline: lidar, odom and mapping nodes -->
+    <!-- meant for running on a vehicle/robot or on a recording -->
+    <arg name="isScanning" default="true" />
+    <!-- set to true if playing a recording -->
+    <param name="/use_sim_time" value="true" />
+
+    <!-- common args -->
+    <arg name="points_topic" default="/velodyne_points" />
+    <!-- new frame id for edge and surface pointclouds -->
+    <arg name="frame_id" default="base_link" />
+
+    <arg name="max_distance" default="90" />
+    <arg name="min_distance" default="0.5" />
+    <!-- default to true, timestamps will always match if using floam lidar nodes -->
+    <!-- will only be false if user chooses to implement their own lidar processing nodes -->
+    <arg name="use_exact_sync" default="true" />
+    <arg name="map_resolution" default="10" />
+    <arg name="queue_size" default="10" />
+    
+    <arg name="edge_threshold" default="0.05" />
+
+    <!-- scanning lidar args -->
+    <arg name="scan_lines" default="32" />
+    <arg name="period" default="0.1" />
+
+    <!-- imaging lidar args -->
+
+    <!-- odom args -->
+    <arg name="edge_cloud_topic" default="/floam_lidar_node/points_edge" />
+    <arg name="surface_cloud_topic" default="/floam_lidar_node/points_surface" />
+
+
+    <!-- mapping args -->
+    <arg name="lidar_frame_id" default="velodyne" />
+    <arg name="mapping_points_topic" default="/points_filtered" />
+    <arg name="mapping_odom_topic" default="/odom" />
+    <arg name="output_map_topic" default="/map" />
+
+    <!-- Node Manager Arguments -->
+    <arg name="node_name" default="floam" />
+    <arg name="manager_name" default="$(arg node_name)_manager" />
+    <arg name="global_manager_name" default="/$(arg manager_name)" />
+    <!-- set `new_manager` to false if you have already launched a nodelet manager elsewhere -->
+    <!-- if false, be sure you set the `manager_name` to your nodelet manager's name -->
+    <arg name="new_manager" default="true" />
+
+    <arg name="rviz" default="true" />
+    
+    <!-- floam lidar node, launches the nodelet manager -->
+    <include file="$(find floam)/launch/floam_imaging_lidar.launch" pass_all_args="true" unless="$(arg isScanning)" />
+    <include file="$(find floam)/launch/floam_scanning_lidar.launch" pass_all_args="true" if="$(arg isScanning)" />
+
+    <!-- floam odom node -->
+    <include file="$(find floam)/launch/floam_odom.launch" pass_all_args="true" />
+
+    <!-- floam mapping node -->
+    <include file="$(find floam)/launch/floam_mapping.launch" pass_all_args="true"/>
+
+    <group if="$(arg rviz)">
+        <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find floam)/rviz/floam.rviz" />
+    </group>
+</launch>

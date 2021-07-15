@@ -54,6 +54,9 @@ private:
   typedef message_filters::Synchronizer<ApproximateSyncPolicy> ApproximateSynchronizer;
   typedef message_filters::Synchronizer<ExactSyncPolicy> ExactSynchronizer;
 
+  message_filters::Subscriber<sensor_msgs::PointCloud2> m_subEdges;
+  message_filters::Subscriber<sensor_msgs::PointCloud2> m_subSurfaces;
+
   std::shared_ptr<ApproximateSynchronizer> m_approximateSync;
   std::shared_ptr<ExactSynchronizer> m_exactSync;
 

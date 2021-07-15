@@ -185,6 +185,10 @@ void Lidar<floam::lidar::Imager>::detectEdges(
   edgeDetector.setDepthDisconThreshold(0.02f);
   edgeDetector.setMaxSearchNeighbors(50);
 
+  std::cout << "cloud width: " << points->width << std::endl;
+  std::cout << "cloud height: " << points->height << std::endl;
+  std::cout << "is_dense: " << points->is_dense << std::endl;
+  std::cout << "isOrganized: " << points->isOrganized() << std::endl;
   // calculate edges
   edgeDetector.compute(*labels, indicies);
 
@@ -231,6 +235,11 @@ void Lidar<floam::lidar::Imager>::detectSurfaces(
   normalDetector.setMaxDepthChangeFactor(0.02f);
   normalDetector.setNormalSmoothingSize(7.0f);
   normalDetector.setInputCloud(points);
+
+  std::cout << "cloud width: " << points->width << std::endl;
+  std::cout << "cloud height: " << points->height << std::endl;
+  std::cout << "is_dense: " << points->is_dense << std::endl;
+  std::cout << "isOrganized: " << points->isOrganized() << std::endl;
 
   normalDetector.compute(normalCloud);
 

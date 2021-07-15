@@ -1,15 +1,17 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="points_topic" default="points" />
+    <!-- new frame id for edge and surface pointclouds -->
+    <arg name="frame_id" default="base_link" />
+    <arg name="max_distance" default="90" />
+    <arg name="min_distance" default="0.5" />
 
     <!-- Node Manager Arguments -->
     <arg name="node_name" default="floam" />
     <arg name="manager_name" value="$(arg node_name)_manager" />
     <arg name="global_manager_name" value="/$(arg manager_name)" />
     <arg name="new_manager" default="true" />
-    <arg name="max_distance" default="90" />
-    <arg name="min_distance" default="0.5" />
-
+    
     <!-- Nodelet Manager -->
     <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" if="$(arg new_manager)" />
 
@@ -17,16 +19,17 @@
     <node pkg="nodelet" type="nodelet" name="$(arg node_name)_lidar_node"
       args="load floam/lidar/ImagingLidarNode $(arg global_manager_name)" output="screen">
         <param name="points_topic" value="$(arg points_topic)" />
+        <param name="frame_id" value="$(arg frame_id)" />
 
         <param name="max_dis" type="double" value="$(arg max_distance)" />
         <param name="min_dis" type="double" value="$(arg min_distance)" />
     </node>
   
-    <node pkg="tf" type="static_transform_publisher" name="map2_baselink_tf"  args="0 0 0 0 0 0 /map /base_link 10" />
+    <node pkg="tf" type="static_transform_publisher" name="map2baselink_tf"  args="0 0 0 0 0 0 /map /$(arg frame_id) 10" />
 
-    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server_loam" ns="base_link" >
+    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server_loam" ns="$(arg frame_id)" >
         <param name="/target_frame_name" value="map" />
-        <param name="/source_frame_name" value="base_link" />
+        <param name="/source_frame_name" value="$(arg frame_id)" />
         <param name="/trajectory_update_rate" value="10.0" />
         <param name="/trajectory_publish_rate" value="10.0" />
     </node>

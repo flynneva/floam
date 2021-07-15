@@ -44,6 +44,7 @@ struct FOV {
 };
 
 struct Settings {
+  std::string frameId;
   Type type;
   FOV fov;  // degrees
   AngularResolution angular; // degrees

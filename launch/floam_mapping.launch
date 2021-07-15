@@ -4,19 +4,15 @@
     <arg name="use_exact_sync" default="false" />
     <arg name="queue_size" default="10" />
     <arg name="map_resolution" default="10" />
-    <arg name="input_points_topic" default="/points_filtered" />
-    <arg name="input_odom_topic" default="/odom" />
-    <arg name="output_map_topic" default="/map" />
+    <arg name="mapping_points_topic" default="/floam_lidar_node/points_filtered" />
+    <arg name="mapping_odom_topic" default="/floal_odom_node/odom" />
+    <arg name="output_map_topic" default="map" />
 
     <!-- Node Manager Arguments -->
     <arg name="node_name" value="floam" />
     <arg name="manager_name" value="$(arg node_name)_manager" />
     <arg name="global_manager_name" value="/$(arg manager_name)" />
-    <arg name="new_manager" default="false" />
 
-    <!-- Nodelet Manager -->
-    <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" if="$(arg new_manager)" />
-  
     <!-- floam mapping node -->
     <node pkg="nodelet" type="nodelet" name="$(arg node_name)_mapping_node"
       args="load floam/lidar/LidarMappingNode $(arg global_manager_name)" output="screen">
@@ -24,8 +20,8 @@
       <param name="queue_size" value="$(arg queue_size)" />
       <param name="map_resolution" value="$(arg map_resolution)" />
 
-      <remap from="points_filtered" to="$(arg input_points_topic)" />
-      <remap from="odom" to="$(arg input_odom_topic)" />
+      <remap from="points_filtered" to="$(arg mapping_points_topic)" />
+      <remap from="odom" to="$(arg mapping_odom_topic)" />
       <remap from="map" to="$(arg output_map_topic)" />
     </node>
 
@@ -37,12 +33,4 @@
         <param name="/trajectory_update_rate" value="10.0" />
         <param name="/trajectory_publish_rate" value="10.0" />
     </node>
-
-    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server_loam" ns="base_link" >
-        <param name="/target_frame_name" value="world" />
-        <param name="/source_frame_name" value="base_link" />
-        <param name="/trajectory_update_rate" value="10.0" />
-        <param name="/trajectory_publish_rate" value="10.0" />
-    </node>
-
 </launch>
