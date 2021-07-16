@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
     <!-- floam odom arguments -->
+    <arg name="frame_id" default="base_link" />
     <arg name="use_exact_sync" default="false" />
     <arg name="queue_size" default="5" />
     <arg name="map_resolution" default="5" />
@@ -18,10 +19,10 @@
       <param name="use_exact_sync" value="$(arg use_exact_sync)" />
       <param name="queue_size" value="$(arg queue_size)" />
       <param name="map_resolution" value="$(arg map_resolution)" />
+      <param name="frame_id" value="$(arg frame_id)" />
 
       <!-- input topics -->
       <remap from="$(arg node_name)_odom_node/points_edge" to="$(arg edge_cloud_topic)" />
       <remap from="$(arg node_name)_odom_node/points_surface" to="$(arg surface_cloud_topic)" />
     </node>
-
 </launch>

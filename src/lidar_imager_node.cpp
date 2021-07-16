@@ -123,9 +123,6 @@ void ImagingLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & poi
   edgePoints.header = points->header;
   surfacePoints.header = points->header;
 
-  edgePoints.header.frame_id = m_lidar.m_settings.common.frameId;
-  surfacePoints.header.frame_id = m_lidar.m_settings.common.frameId;
-
   // publish filtered, edge and surface clouds
   m_pubEdgePoints.publish(edgePoints);
   m_pubSurfacePoints.publish(surfacePoints);

@@ -69,6 +69,8 @@ private:
 
   int m_queueSize = 5;
 
+  std::string m_frameId;
+
   floam::lidar::Total m_totals;
 
 private:

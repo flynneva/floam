@@ -17,8 +17,10 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/Odometry.h>
+#include <tf2_ros/transform_listener.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
+#include <pcl_ros/transforms.h>
 
 //pcl lib
 #include <pcl_conversions/pcl_conversions.h>
@@ -38,6 +40,7 @@ namespace lidar
 {
 
 ScanningLidarNode::ScanningLidarNode()
+: m_tf2Listener(m_tf2Buffer)
 {
   // constructor
 }
@@ -52,6 +55,7 @@ void ScanningLidarNode::onInit()
     m_nodeHandle = getPrivateNodeHandle();
     // defaults
     std::string points_topic = "points";
+    // frameId has to already be published and be connected to your lidar's frame_id
     std::string frameId = "base_link";
     int scan_lines = 64;
     double vertical_angle = 2.0;
@@ -69,7 +73,7 @@ void ScanningLidarNode::onInit()
     m_nodeHandle.getParam("min_dis", min_dis);
     m_nodeHandle.getParam("scan_lines", scan_lines);
     m_nodeHandle.getParam("edgeThreshold", edgeThreshold);
-    m_nodeHandle.getParam("frame_id", frameId);
+    m_nodeHandle.getParam("top_frame_id", frameId);
 
     m_lidar.m_settings.period = scan_period;
     m_lidar.m_settings.lines = scan_lines;
@@ -91,12 +95,22 @@ void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & po
 {
   // convert msg to pcl format, only XYZ and remove NaN points
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloudWithNaN(new pcl::PointCloud<pcl::PointXYZ>());
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloudTransformed(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
   /// conver to pcl format
   pcl::fromROSMsg(*points, *cloudWithNaN);
+
+  geometry_msgs::TransformStamped transformStamped;
+  transformStamped = m_tf2Buffer.lookupTransform(
+    m_lidar.m_settings.common.frameId,
+    points->header.frame_id,
+    ros::Time(0));
+  // transform pointclouds to new coordinate frame
+  pcl_ros::transformPointCloud<pcl::PointXYZ>(*cloudWithNaN, *cloudTransformed, transformStamped.transform);
+  
   std::vector<int> indices;
   /// remove NaN's from pointcloud
-  pcl::removeNaNFromPointCloud(*cloudWithNaN, *cloud, indices);
+  pcl::removeNaNFromPointCloud(*cloudTransformed, *cloud, indices);
 
   // initialize timers to calculate how long the processing takes
   std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -136,7 +150,6 @@ void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & po
   edge_removal.setInputCloud(edgesAndSurfaces);
   edge_removal.filter(*surfaces);
 
-
   std::vector <pcl::PointIndices> labelIndices;
 
   // end processing time
@@ -150,31 +163,34 @@ void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & po
   m_lidar.m_total.time += time_temp;
   // ROS_INFO("average lidar processing time %f ms", m_lidar.m_total.time / m_lidar.m_total.frames);
 
+  // TODO(flynneva): transform pointclouds to new coordinate frame?
   // convert edge pcl to ROS message
-  sensor_msgs::PointCloud2 edgePoints;
-  pcl::toROSMsg(*edges, edgePoints);
+  sensor_msgs::PointCloud2 edgeMsg;
+  pcl::toROSMsg(*edges, edgeMsg);
 
   // convert surface pcl to ROS message
-  sensor_msgs::PointCloud2 surfacePoints;
-  pcl::toROSMsg(*surfaces, surfacePoints);
+  sensor_msgs::PointCloud2 surfaceMsg;
+  pcl::toROSMsg(*surfaces, surfaceMsg);
 
   // convert edges and surfaces pcl to ROS message
-  sensor_msgs::PointCloud2 edgesAndSurfaceMsg;
-  pcl::toROSMsg(*edgesAndSurfaces, edgesAndSurfaceMsg);
+  sensor_msgs::PointCloud2 edgeAndSurfaceMsg;
+  pcl::toROSMsg(*edgesAndSurfaces, edgeAndSurfaceMsg);
 
   // set header information
-  edgePoints.header = points->header;
-  surfacePoints.header = points->header;
-  edgesAndSurfaceMsg.header = points->header;
+  edgeMsg.header = points->header;
+  surfaceMsg.header = points->header;
+  edgeAndSurfaceMsg.header = points->header;
 
-  edgePoints.header.frame_id = m_lidar.m_settings.common.frameId;
-  surfacePoints.header.frame_id = m_lidar.m_settings.common.frameId;
-  edgesAndSurfaceMsg.header.frame_id = m_lidar.m_settings.common.frameId;
+  // set new frame_id since we transformed the pointcloud to a different frame_id
+  std::string floamLidarFrame = "floam_" + points->header.frame_id;
+  edgeMsg.header.frame_id = floamLidarFrame;  // m_lidar.m_settings.common.frameId;
+  surfaceMsg.header.frame_id = floamLidarFrame;  // m_lidar.m_settings.common.frameId;
+  edgeAndSurfaceMsg.header.frame_id = floamLidarFrame; // m_lidar.m_settings.common.frameId;
 
   // publish filtered, edge and surface clouds
-  m_pubEdgePoints.publish(edgePoints);
-  m_pubSurfacePoints.publish(surfacePoints);
-  m_pubEdgesAndSurfaces.publish(edgesAndSurfaceMsg);
+  m_pubEdgePoints.publish(edgeMsg);
+  m_pubSurfacePoints.publish(surfaceMsg);
+  m_pubEdgesAndSurfaces.publish(edgeAndSurfaceMsg);
 }
 
 }  // namespace lidar

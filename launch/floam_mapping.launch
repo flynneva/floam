@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
+    <arg name="frame_id" default="base_link" />
     <arg name="lidar_frame_id" default="velodyne" />
     <arg name="use_exact_sync" default="false" />
     <arg name="queue_size" default="10" />
@@ -32,5 +33,12 @@
         <param name="/source_frame_name" value="$(arg lidar_frame_id)" />
         <param name="/trajectory_update_rate" value="10.0" />
         <param name="/trajectory_publish_rate" value="10.0" />
+    </node>
+
+    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server_loam" ns="$(arg frame_id)" >
+      <param name="/target_frame_name" value="world" />
+      <param name="/source_frame_name" value="$(arg frame_id)" />
+      <param name="/trajectory_update_rate" value="10.0" />
+      <param name="/trajectory_publish_rate" value="10.0" />
     </node>
 </launch>

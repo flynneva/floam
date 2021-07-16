@@ -10,6 +10,7 @@
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tf/transform_listener.h>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
@@ -45,6 +46,9 @@ private:
   ros::Publisher m_pubEdgePoints;
   ros::Publisher m_pubSurfacePoints;
   ros::Publisher m_pubEdgesAndSurfaces;
+
+  tf2_ros::Buffer m_tf2Buffer;
+  tf2_ros::TransformListener m_tf2Listener;
 
   std::queue<sensor_msgs::PointCloud2ConstPtr> m_points;
 };

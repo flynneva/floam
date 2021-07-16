@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   eigen_conversions
   nodelet
+  pcl_ros
 )
 
 find_package(Eigen3)
@@ -63,6 +64,7 @@ catkin_package(
   eigen_conversions
   rosbag
   sensor_msgs
+  pcl_ros
 )
 
 # reusable lidar library, provides the Lidar template class

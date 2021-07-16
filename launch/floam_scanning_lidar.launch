@@ -1,8 +1,15 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="points_topic" default="points" />
-    <!-- new frame id for edge and surface pointclouds -->
-    <arg name="frame_id" default="velodyne" />
+    <!-- default to kitti dataset points topic -->
+    <arg name="points_topic" default="/velodyne_points" />
+    <!-- your top-level frame_id of your vehicle in your data's tf tree -->
+    <!-- for the kitti dataset, this is is 'imu' -->
+    <arg name="top_frame_id" default="imu" />
+    <!-- your datas lidar frame_id, the same frame_id as your points topic -->
+    <arg name="lidar_frame_id" default="velodyne" />
+    <!-- floam's new frame_id to not interfere with any existing tf tree -->
+    <!-- always starts with `floam_` and then your lidars frame_id -->
+    <arg name="floam_frame_id" default="floam_$(arg lidar_frame_id)" />
     <arg name="max_distance" default="1000" />
     <arg name="min_distance" default="0.0" />
     <arg name="edge_threshold" default="0.05" />
@@ -16,24 +23,17 @@
     <!-- Nodelet Manager -->
     <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" if="$(arg new_manager)" />
 
+    <node pkg="tf" type="static_transform_publisher" name="baselink2floam_tf"  args="0 0 0 0 0 0 /base_link /$(arg floam_frame_id) 10" /> -->
+
     <!-- floam scanning lidar node -->
     <node pkg="nodelet" type="nodelet" name="$(arg node_name)_lidar_node"
       args="load floam/lidar/ScanningLidarNode $(arg global_manager_name)" output="screen">
         <param name="points_topic" value="$(arg points_topic)" />
-        <param name="frame_id" value="$(arg frame_id)" />
+        <param name="top_frame_id" value="$(arg top_frame_id)" />
 
         <param name="edge_threshold" value="$(arg edge_threshold)" />
         <param name="max_dis" type="double" value="$(arg max_distance)" />
         <param name="min_dis" type="double" value="$(arg min_distance)" />
-    </node>
-  
-    <node pkg="tf" type="static_transform_publisher" name="map2baselink_tf"  args="0 0 0 0 0 0 /map /base_link 10" />
-
-    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server_loam" ns="base_link" >
-        <param name="/target_frame_name" value="map" />
-        <param name="/source_frame_name" value="base_link" />
-        <param name="/trajectory_update_rate" value="10.0" />
-        <param name="/trajectory_publish_rate" value="10.0" />
     </node>
 
 </launch>

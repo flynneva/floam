@@ -32,6 +32,7 @@
   <depend>tf</depend>
   <depend>eigen_conversions</depend>
   <depend>hector_trajectory_server</depend>
+  <depend>pcl_ros</depend>
 
   <export>
 	  <nodelet plugin="${prefix}/nodelets.xml" />

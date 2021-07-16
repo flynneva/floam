@@ -10,6 +10,13 @@
     <arg name="points_topic" default="/velodyne_points" />
     <!-- new frame id for edge and surface pointclouds -->
     <arg name="frame_id" default="base_link" />
+    <!-- for the kitti dataset this is 'imu' -->
+    <arg name="top_frame_id" default="imu" />
+    <!-- your datas lidar frame_id, the same frame_id as your points topic -->
+    <arg name="lidar_frame_id" default="velodyne" />
+    <!-- floam's new frame_id to not interfere with any existing tf tree -->
+    <!-- always starts with `floam_` and then your lidars frame_id -->
+    <arg name="floam_frame_id" default="floam_$(arg lidar_frame_id)" />
 
     <arg name="max_distance" default="90" />
     <arg name="min_distance" default="0.5" />
@@ -33,10 +40,9 @@
 
 
     <!-- mapping args -->
-    <arg name="lidar_frame_id" default="velodyne" />
-    <arg name="mapping_points_topic" default="/points_filtered" />
-    <arg name="mapping_odom_topic" default="/odom" />
-    <arg name="output_map_topic" default="/map" />
+    <arg name="mapping_points_topic" default="/floam_lidar_node/points_filtered" />
+    <arg name="mapping_odom_topic" default="/floal_odom_node/odom" />
+    <arg name="output_map_topic" default="map" />
 
     <!-- Node Manager Arguments -->
     <arg name="node_name" default="floam" />

@@ -61,8 +61,8 @@ void OdomEstimation::updatePointsToMap(
   
   //ROS_WARN("point nyum%d,%d",(int)downsampledEdgeCloud->points.size(), (int)downsampledSurfCloud->points.size());
   // TODO(flynneva): make these limits parameters?
-  if (m_lidarCloudCornerMap->points.size() > 10 &&
-      m_lidarCloudSurfMap->points.size() > 50)
+  if (m_lidarCloudCornerMap->points.size() > 50 &&
+      m_lidarCloudSurfMap->points.size() > 10)
   {
     m_kdTreeEdgeMap->setInputCloud(m_lidarCloudCornerMap);
     m_kdTreeSurfMap->setInputCloud(m_lidarCloudSurfMap);
@@ -85,7 +85,9 @@ void OdomEstimation::updatePointsToMap(
       ceres::Solve(options, &problem, &summary);
     }
   } else {
-    printf("not enough points in map to associate, map error");
+    printf("[ updatePointsToMap ] not enough points in map to associate\n");
+    printf("[ updatePointsToMap ] corners: %li  [ minimum required: > 50]\n", m_lidarCloudCornerMap->points.size());
+    printf("[ updatePointsToMap ] surfaces: %li [ minimum required: > 10]\n", m_lidarCloudSurfMap->points.size());
   }
 
   m_odom = Eigen::Isometry3d::Identity();

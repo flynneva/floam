@@ -4,6 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /Status1
       Splitter Ratio: 0.5
     Tree Height: 465
@@ -157,8 +158,6 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        velodyne:
-          {}
         world:
           imu:
             cam00:
@@ -168,6 +167,8 @@ Visualization Manager:
             cam02:
               {}
             cam03:
+              {}
+            velodyne:
               {}
           map:
             base_link:
@@ -281,7 +282,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: velodyne
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -305,7 +306,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 23.509681701660156
+      Distance: 64.12476348876953
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -321,9 +322,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.494797945022583
+      Pitch: 0.8947989344596863
       Target Frame: <Fixed Frame>
-      Yaw: 2.685403347015381
+      Yaw: 2.890399217605591
     Saved: ~
 Window Geometry:
   Displays:

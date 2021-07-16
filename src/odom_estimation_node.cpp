@@ -46,10 +46,16 @@ void OdomEstimationNode::onInit()
   m_nodeHandle.getParam("use_exact_sync", m_useExactSync);
   m_nodeHandle.getParam("queue_size", m_queueSize);
   m_nodeHandle.getParam("map_resolution", map_resolution);
+  m_nodeHandle.getParam("frame_id", m_frameId);
 
   m_odomEstimation.init(map_resolution);
 
-  ROS_INFO_STREAM("odom nodehandle: " << m_nodeHandle.getNamespace());
+
+  ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/frame_id: " << m_frameId);
+  ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/use_exact_sync: " << m_useExactSync);
+  ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/queue_size: " << m_queueSize);
+  ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/map_resolution: " << map_resolution);
+
   // should these topic names be parameters instead of remapped?
   m_subEdges.subscribe(m_nodeHandle, "points_edge", 100);
   m_subSurfaces.subscribe(m_nodeHandle, "points_surface", 100);
@@ -111,12 +117,11 @@ void OdomEstimationNode::handleClouds(
   tf::Quaternion q(q_current.x(),q_current.y(),q_current.z(),q_current.w());
   transform.setRotation(q);
 
-  // TODO(flynneva): make base_link configurable?
-  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", "base_link")); 
+  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", m_frameId)); 
   // publish odometry
   nav_msgs::Odometry lidarOdometry;
   lidarOdometry.header.frame_id = "map";
-  lidarOdometry.child_frame_id = "base_link";
+  lidarOdometry.child_frame_id = m_frameId;
   lidarOdometry.header.stamp = pointcloud_time;
   lidarOdometry.pose.pose.orientation.x = q_current.x();
   lidarOdometry.pose.pose.orientation.y = q_current.y();
