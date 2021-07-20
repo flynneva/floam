@@ -10,8 +10,8 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <message_filters/subscriber.h>
 #include <nav_msgs/Odometry.h>
-#include <tf/transform_datatypes.h>
-#include <tf/transform_broadcaster.h>
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_ros/transform_broadcaster.h"
 
 //pcl lib
 #include <pcl_conversions/pcl_conversions.h>
@@ -47,14 +47,20 @@ void OdomEstimationNode::onInit()
   m_nodeHandle.getParam("queue_size", m_queueSize);
   m_nodeHandle.getParam("map_resolution", map_resolution);
   m_nodeHandle.getParam("frame_id", m_frameId);
+  m_nodeHandle.getParam("parent_frame_id", m_parentFrameId);
 
   m_odomEstimation.init(map_resolution);
 
 
   ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/frame_id: " << m_frameId);
+  ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/parent_frame_id: " << m_parentFrameId);
   ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/use_exact_sync: " << m_useExactSync);
   ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/queue_size: " << m_queueSize);
   ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/map_resolution: " << map_resolution);
+
+  m_tfGlobal.reset(new geometry_msgs::TransformStamped());
+
+  m_tfGlobal->child_frame_id = m_frameId;
 
   // should these topic names be parameters instead of remapped?
   m_subEdges.subscribe(m_nodeHandle, "points_edge", 100);
@@ -86,8 +92,7 @@ void OdomEstimationNode::handleClouds(
   pcl::fromROSMsg(*edges_msg, *pointcloud_edge_in);
   pcl::fromROSMsg(*surfaces_msg, *pointcloud_surf_in);
 
-  // get timestamp from edges pointcloud msg
-  // option to use surfaces_msg stamp instead? average them?
+  // get timestamp from edges pointcloud msg, should (always) be the same as
   ros::Time pointcloud_time = edges_msg->header.stamp;
 
   // check if odometry is initialized
@@ -108,28 +113,34 @@ void OdomEstimationNode::handleClouds(
       ROS_INFO("average odom estimation time %f ms", m_totals.time / m_totals.frames);
   }
 
-  Eigen::Quaterniond q_current(m_odomEstimation.m_odom.rotation());
-  //q_current.normalize();
-  Eigen::Vector3d t_current = m_odomEstimation.m_odom.translation();
-  static tf::TransformBroadcaster br;
-  tf::Transform transform;
-  transform.setOrigin( tf::Vector3(t_current.x(), t_current.y(), t_current.z()) );
-  tf::Quaternion q(q_current.x(),q_current.y(),q_current.z(),q_current.w());
-  transform.setRotation(q);
+  /// get current odometry
+  m_tfGlobal->transform.translation.x = m_odomEstimation.m_currentTranslation.x();
+  m_tfGlobal->transform.translation.y = m_odomEstimation.m_currentTranslation.y();
+  m_tfGlobal->transform.translation.z = m_odomEstimation.m_currentTranslation.z();
 
-  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", m_frameId)); 
+  m_tfGlobal->transform.rotation.x = m_odomEstimation.m_currentRotation.x();
+  m_tfGlobal->transform.rotation.y = m_odomEstimation.m_currentRotation.y();
+  m_tfGlobal->transform.rotation.z = m_odomEstimation.m_currentRotation.z();
+  m_tfGlobal->transform.rotation.w = m_odomEstimation.m_currentRotation.w();
+
+  /// broadcast odom transform
+  static tf2_ros::TransformBroadcaster br;
+  m_tfGlobal->header.stamp = edges_msg->header.stamp;
+  m_tfGlobal->header.frame_id = m_parentFrameId;
+  br.sendTransform(*m_tfGlobal);
+
   // publish odometry
   nav_msgs::Odometry lidarOdometry;
-  lidarOdometry.header.frame_id = "map";
+  lidarOdometry.header.frame_id = m_parentFrameId;
   lidarOdometry.child_frame_id = m_frameId;
   lidarOdometry.header.stamp = pointcloud_time;
-  lidarOdometry.pose.pose.orientation.x = q_current.x();
-  lidarOdometry.pose.pose.orientation.y = q_current.y();
-  lidarOdometry.pose.pose.orientation.z = q_current.z();
-  lidarOdometry.pose.pose.orientation.w = q_current.w();
-  lidarOdometry.pose.pose.position.x = t_current.x();
-  lidarOdometry.pose.pose.position.y = t_current.y();
-  lidarOdometry.pose.pose.position.z = t_current.z();
+  lidarOdometry.pose.pose.orientation.x = m_tfGlobal->transform.rotation.x;
+  lidarOdometry.pose.pose.orientation.y = m_tfGlobal->transform.rotation.y;
+  lidarOdometry.pose.pose.orientation.z = m_tfGlobal->transform.rotation.z;
+  lidarOdometry.pose.pose.orientation.w = m_tfGlobal->transform.rotation.w;
+  lidarOdometry.pose.pose.position.x = m_tfGlobal->transform.translation.x;
+  lidarOdometry.pose.pose.position.y = m_tfGlobal->transform.translation.y;
+  lidarOdometry.pose.pose.position.z = m_tfGlobal->transform.translation.z;
   m_pubLidarOdometry.publish(lidarOdometry);
 }
 

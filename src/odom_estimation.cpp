@@ -13,6 +13,13 @@ namespace floam
 namespace odom
 {
 
+OdomEstimation::OdomEstimation()
+: m_currentRotation(Eigen::Map<Eigen::Quaterniond>(m_parameters)),
+  m_currentTranslation(Eigen::Map<Eigen::Vector3d>(m_parameters + 4))
+{
+  // constructor
+}
+
 void OdomEstimation::init(double mapResolution) {
   //init local map
   m_lidarCloudCornerMap = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
@@ -23,9 +30,11 @@ void OdomEstimation::init(double mapResolution) {
   //kd-tree
   m_kdTreeEdgeMap = pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr(new pcl::KdTreeFLANN<pcl::PointXYZ>());
   m_kdTreeSurfMap = pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr(new pcl::KdTreeFLANN<pcl::PointXYZ>());
+
   m_odom = Eigen::Isometry3d::Identity();
   m_lastOdom = Eigen::Isometry3d::Identity();
-  m_optimizationCount=2;
+
+  m_optimizationCount = 2;
 }
 
 void OdomEstimation::initMapWithPoints(
@@ -34,7 +43,8 @@ void OdomEstimation::initMapWithPoints(
 {
   *m_lidarCloudCornerMap += *edges;
   *m_lidarCloudSurfMap += *surfaces;
-  m_optimizationCount = 12;  // why is this hard coded?
+  /// TODO(flynneva): make this a parameter
+  m_optimizationCount = 12;
 }
 
 
@@ -42,16 +52,20 @@ void OdomEstimation::updatePointsToMap(
   const pcl::PointCloud<pcl::PointXYZ>::Ptr & edges,
   const pcl::PointCloud<pcl::PointXYZ>::Ptr & surfaces)
 {
+  /// TODO(flynneva): make this a parameter
   if (m_optimizationCount > 2) {
     m_optimizationCount--;
   }
-
-  /// predict odom
+  
   Eigen::Isometry3d odomPrediction = m_odom * (m_lastOdom.inverse() * m_odom);
   m_lastOdom = m_odom;
   m_odom = odomPrediction;
-  m_currentQW = Eigen::Quaterniond(m_odom.rotation());
-  m_currentTW = m_odom.translation();
+
+  // m_currentTranslation = m_currentTranslation + (m_currentRotation * m_lastTranslation);
+  // m_currentRotation = m_currentRotation * m_lastRotation;
+
+  // m_lastRotation = m_currentRotation;
+  // m_lastTranslation = m_currentTranslation;
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr downsampledEdgeCloud(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::PointCloud<pcl::PointXYZ>::Ptr downsampledSurfCloud(new pcl::PointCloud<pcl::PointXYZ>());
@@ -61,50 +75,47 @@ void OdomEstimation::updatePointsToMap(
   
   //ROS_WARN("point nyum%d,%d",(int)downsampledEdgeCloud->points.size(), (int)downsampledSurfCloud->points.size());
   // TODO(flynneva): make these limits parameters?
-  if (m_lidarCloudCornerMap->points.size() > 50 &&
-      m_lidarCloudSurfMap->points.size() > 10)
+  if (m_lidarCloudCornerMap->points.size() > 10 &&
+      m_lidarCloudSurfMap->points.size() > 50)
   {
     m_kdTreeEdgeMap->setInputCloud(m_lidarCloudCornerMap);
     m_kdTreeSurfMap->setInputCloud(m_lidarCloudSurfMap);
-    for (int iterCount = 0; iterCount < m_optimizationCount; iterCount++) {
-      ceres::LossFunction *loss_function = new ceres::HuberLoss(0.1);
-      ceres::Problem::Options problem_options;
-      ceres::Problem problem(problem_options);
-      problem.AddParameterBlock(m_parameters, 7, new floam::lidar::PoseSE3Parameterization());
-      
-      addEdgeCostFactor(downsampledEdgeCloud, m_lidarCloudCornerMap, problem, loss_function);
-      addSurfCostFactor(downsampledSurfCloud, m_lidarCloudSurfMap, problem, loss_function);
-      ceres::Solver::Options options;
-      /// TODO(flynneva): make these parameters
-      options.linear_solver_type = ceres::DENSE_QR;
-      options.max_num_iterations = 4;
-      options.minimizer_progress_to_stdout = false;
-      options.check_gradients = false;
-      options.gradient_check_relative_precision = 1e-4;
-      ceres::Solver::Summary summary;
-      ceres::Solve(options, &problem, &summary);
-    }
+
+    ceres::LossFunction *loss_function = new ceres::HuberLoss(0.1);
+  
+    ceres::Problem::Options problem_options;
+    ceres::Problem problem(problem_options);
+    problem.AddParameterBlock(m_parameters, 7, new floam::lidar::PoseSE3Parameterization());
+    
+    addEdgeCostFactor(downsampledEdgeCloud, m_lidarCloudCornerMap, problem, loss_function);
+    addSurfCostFactor(downsampledSurfCloud, m_lidarCloudSurfMap, problem, loss_function);
+    ceres::Solver::Options options;
+    /// TODO(flynneva): make these parameters
+    options.linear_solver_type = ceres::DENSE_QR;
+    options.max_num_iterations = m_optimizationCount;
+    options.minimizer_progress_to_stdout = false;
+    options.check_gradients = false;
+    options.gradient_check_relative_precision = 1e-4;
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
   } else {
     printf("[ updatePointsToMap ] not enough points in map to associate\n");
-    printf("[ updatePointsToMap ] corners: %li  [ minimum required: > 50]\n", m_lidarCloudCornerMap->points.size());
-    printf("[ updatePointsToMap ] surfaces: %li [ minimum required: > 10]\n", m_lidarCloudSurfMap->points.size());
+    printf("[ updatePointsToMap ] corners: %li  [ minimum required: > 10]\n", m_lidarCloudCornerMap->points.size());
+    printf("[ updatePointsToMap ] surfaces: %li [ minimum required: > 50]\n", m_lidarCloudSurfMap->points.size());
   }
 
-  m_odom = Eigen::Isometry3d::Identity();
-  m_odom.linear() = m_currentQW.toRotationMatrix();
-  m_odom.translation() = m_currentTW;
   addPointsToMap(downsampledEdgeCloud, downsampledSurfCloud);
 }
 
 void OdomEstimation::pointAssociateToMap(
-  pcl::PointXYZ const *const pointsIn,
-  pcl::PointXYZ *const pointsOut)
+  pcl::PointXYZ const *const pointIn,
+  pcl::PointXYZ *const pointOut)
 {
-  Eigen::Vector3d point_curr(pointsIn->x, pointsIn->y, pointsIn->z);
-  Eigen::Vector3d point_w = m_currentQW * point_curr + m_currentTW;
-  pointsOut->x = point_w.x();
-  pointsOut->y = point_w.y();
-  pointsOut->z = point_w.z();
+  Eigen::Vector3d pointCurrent(pointIn->x, pointIn->y, pointIn->z);
+  Eigen::Vector3d point_w = m_currentRotation * pointCurrent + m_currentTranslation;
+  pointOut->x = point_w.x();
+  pointOut->y = point_w.y();
+  pointOut->z = point_w.z();
 }
 
 void OdomEstimation::downSamplingToMap(
@@ -167,9 +178,10 @@ void OdomEstimation::addEdgeCostFactor(
         Eigen::Vector3d point_a, point_b;
         point_a = 0.1 * unit_direction + point_on_line;
         point_b = -0.1 * unit_direction + point_on_line;
-        ceres::CostFunction *cost_function = new floam::lidar::EdgeAnalyticCostFunction(curr_point, point_a, point_b);  
+        ceres::CostFunction* cost_function =
+              new floam::lidar::LidarEdgeFunctor(curr_point, point_a, point_b);
         problem.AddResidualBlock(cost_function, loss_function, m_parameters);
-        corner_num++;   
+        corner_num++;
       }                           
     }
   }
@@ -209,6 +221,7 @@ void OdomEstimation::addSurfCostFactor(
       Eigen::Vector3d norm = matA0.colPivHouseholderQr().solve(matB0);
       double negative_OA_dot_norm = 1 / norm.norm();
       norm.normalize();
+
       bool planeValid = true;
       for (int j = 0; j < 5; j++)
       {
@@ -226,7 +239,8 @@ void OdomEstimation::addSurfCostFactor(
       Eigen::Vector3d curr_point(points->points[i].x, points->points[i].y, points->points[i].z);
       if (planeValid)
       {
-        ceres::CostFunction *cost_function = new floam::lidar::SurfNormAnalyticCostFunction(curr_point, norm, negative_OA_dot_norm);    
+        ceres::CostFunction *cost_function =
+          new floam::lidar::LidarSurfaceFunctor(curr_point, norm, negative_OA_dot_norm);   
         problem.AddResidualBlock(cost_function, lossFunction, m_parameters);
         surf_num++;
       }
@@ -253,25 +267,30 @@ void OdomEstimation::addPointsToMap(
     m_lidarCloudSurfMap->push_back(point_temp);
   }
   
-  double x_min = +m_odom.translation().x() - 100;
-  double y_min = +m_odom.translation().y() - 100;
-  double z_min = +m_odom.translation().z() - 100;
-  double x_max = +m_odom.translation().x() + 100;
-  double y_max = +m_odom.translation().y() + 100;
-  double z_max = +m_odom.translation().z() + 100;
+  double x_min = +m_currentTranslation.x() - 100;
+  double y_min = +m_currentTranslation.y() - 100;
+  double z_min = +m_currentTranslation.z() - 100;
+  double x_max = +m_currentTranslation.x() + 100;
+  double y_max = +m_currentTranslation.y() + 100;
+  double z_max = +m_currentTranslation.z() + 100;
 
   //ROS_INFO("size : %f,%f,%f,%f,%f,%f", x_min, y_min, z_min,x_max, y_max, z_max);
   m_cropBoxFilter.setMin(Eigen::Vector4f(x_min, y_min, z_min, 1.0));
   m_cropBoxFilter.setMax(Eigen::Vector4f(x_max, y_max, z_max, 1.0));
   m_cropBoxFilter.setNegative(false);    
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr tmpCorner(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::PointCloud<pcl::PointXYZ>::Ptr tmpSurf(new pcl::PointCloud<pcl::PointXYZ>());
+
   m_cropBoxFilter.setInputCloud(m_lidarCloudSurfMap);
   m_cropBoxFilter.filter(*tmpSurf);
+
   m_cropBoxFilter.setInputCloud(m_lidarCloudCornerMap);
   m_cropBoxFilter.filter(*tmpCorner);
+
   m_downSizeFilterSurf.setInputCloud(tmpSurf);
   m_downSizeFilterSurf.filter(*m_lidarCloudSurfMap);
+
   m_downSizeFilterEdge.setInputCloud(tmpCorner);
   m_downSizeFilterEdge.filter(*m_lidarCloudCornerMap);
 }

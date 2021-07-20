@@ -15,7 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   rosbag
   std_msgs
-  tf
+  tf2
+  tf2_geometry_msgs
   eigen_conversions
   nodelet
   pcl_ros
@@ -60,7 +61,8 @@ catkin_package(
   rospy
   std_msgs
   nodelet
-  tf
+  tf2
+  tf2_geometry_msgs
   eigen_conversions
   rosbag
   sensor_msgs

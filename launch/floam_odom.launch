@@ -2,6 +2,7 @@
 <launch>
     <!-- floam odom arguments -->
     <arg name="frame_id" default="base_link" />
+    <arg name="odom_parent_frame_id" default="map" />
     <arg name="use_exact_sync" default="false" />
     <arg name="queue_size" default="5" />
     <arg name="map_resolution" default="5" />
@@ -20,6 +21,7 @@
       <param name="queue_size" value="$(arg queue_size)" />
       <param name="map_resolution" value="$(arg map_resolution)" />
       <param name="frame_id" value="$(arg frame_id)" />
+      <param name="parent_frame_id" value="$(arg odom_parent_frame_id)" />
 
       <!-- input topics -->
       <remap from="$(arg node_name)_odom_node/points_edge" to="$(arg edge_cloud_topic)" />

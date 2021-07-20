@@ -49,23 +49,27 @@ namespace odom
 class OdomEstimation
 {
 public:
+  /// constructor / destructor
+  OdomEstimation();
+  ~OdomEstimation() {};
+
   void init(double mapResolution);	
   void initMapWithPoints(const pcl::PointCloud<pcl::PointXYZ>::Ptr & edges, const pcl::PointCloud<pcl::PointXYZ>::Ptr& surfaces);
   void updatePointsToMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr & edges, const pcl::PointCloud<pcl::PointXYZ>::Ptr& surfaces);
   void getMap(pcl::PointCloud<pcl::PointXYZ>::Ptr & lidarCloudMap);
 
-  /// optimization variable
+  /// Odometry
+  Eigen::Isometry3d m_odom, m_lastOdom;
+
+  /// Optimization parameters that ceres solvers update each loop
   double m_parameters[7] = {0, 0, 0, 1, 0, 0, 0};
-  Eigen::Map<Eigen::Quaterniond> m_currentQW = Eigen::Map<Eigen::Quaterniond>(m_parameters);
-  Eigen::Map<Eigen::Vector3d> m_currentTW = Eigen::Map<Eigen::Vector3d>(m_parameters + 4);
+
+  Eigen::Map<Eigen::Quaterniond> m_currentRotation;
+  Eigen::Map<Eigen::Vector3d> m_currentTranslation;
 
   /// kd-tree
   pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr m_kdTreeEdgeMap;
   pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr m_kdTreeSurfMap;
-
-  /// Odometry
-  Eigen::Isometry3d m_odom;
-  Eigen::Isometry3d m_lastOdom;
 
   /// corner and surface map objects
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_lidarCloudCornerMap;
@@ -85,7 +89,7 @@ public:
   void addEdgeCostFactor(
 	const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
 	const pcl::PointCloud<pcl::PointXYZ>::Ptr & map,
-	ceres::Problem& problem,
+	ceres::Problem & problem,
 	ceres::LossFunction * lossFunction);
 
   void addSurfCostFactor(

@@ -26,7 +26,7 @@
       <remap from="map" to="$(arg output_map_topic)" />
     </node>
 
-    <node pkg="tf" type="static_transform_publisher" name="world2map_tf"  args="0 0 0 0 0 0 /world /map 10" />
+    <node pkg="tf" type="static_transform_publisher" name="world2map_tf"  args="0 0 0 0 0 0 world map 10" />
 
   	<node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server_loam" ns="gt" >
         <param name="/target_frame_name" value="world" />

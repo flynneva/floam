@@ -23,7 +23,7 @@
     <!-- Nodelet Manager -->
     <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" if="$(arg new_manager)" />
 
-    <node pkg="tf" type="static_transform_publisher" name="baselink2floam_tf"  args="0 0 0 0 0 0 /base_link /$(arg floam_frame_id) 10" /> -->
+    <node pkg="tf" type="static_transform_publisher" name="baselink2floam_tf"  args="0 0 0 0 0 0 base_link $(arg floam_frame_id) 10" />
 
     <!-- floam scanning lidar node -->
     <node pkg="nodelet" type="nodelet" name="$(arg node_name)_lidar_node"
