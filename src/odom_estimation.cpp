@@ -15,7 +15,9 @@ namespace odom
 
 OdomEstimation::OdomEstimation()
 : m_currentRotation(Eigen::Map<Eigen::Quaterniond>(m_parameters)),
-  m_currentTranslation(Eigen::Map<Eigen::Vector3d>(m_parameters + 4))
+  m_currentTranslation(Eigen::Map<Eigen::Vector3d>(m_parameters + 4)),
+  m_lastRotation(Eigen::Map<Eigen::Quaterniond>(m_parameters)),
+  m_lastTranslation(Eigen::Map<Eigen::Vector3d>(m_parameters + 4))
 {
   // constructor
 }
@@ -57,15 +59,30 @@ void OdomEstimation::updatePointsToMap(
     m_optimizationCount--;
   }
   
-  Eigen::Isometry3d odomPrediction = m_odom * (m_lastOdom.inverse() * m_odom);
+  // init temp odom prediction object
+  Eigen::Isometry3d odomPrediction = Eigen::Isometry3d::Identity();
+
+  // get current rotation and translation
+  // m_currentRotation = Eigen::Quaterniond(m_odom.rotation());
+  // m_currentTranslation = m_odom.translation();
+
+  // FLOAM implementation, calculate predicted odom
+  odomPrediction = m_odom * (m_lastOdom.inverse() * m_odom);
+
+  // A-LOAM implementation, calculate predicted rotation and translation
+  // odomPrediction.translation() = m_currentTranslation + (m_currentRotation * m_lastTranslation);
+  // odomPrediction.linear() = Eigen::Quaterniond(m_currentRotation * m_lastRotation).toRotationMatrix();
+
+  // update odom objects
   m_lastOdom = m_odom;
   m_odom = odomPrediction;
 
-  // m_currentTranslation = m_currentTranslation + (m_currentRotation * m_lastTranslation);
-  // m_currentRotation = m_currentRotation * m_lastRotation;
-
-  // m_lastRotation = m_currentRotation;
+  // update rotation and translation objects
   // m_lastTranslation = m_currentTranslation;
+  // m_lastRotation = m_currentRotation;
+
+  m_currentTranslation = m_odom.translation();
+  m_currentRotation = Eigen::Quaterniond(m_odom.rotation());
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr downsampledEdgeCloud(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::PointCloud<pcl::PointXYZ>::Ptr downsampledSurfCloud(new pcl::PointCloud<pcl::PointXYZ>());
@@ -104,6 +121,11 @@ void OdomEstimation::updatePointsToMap(
     printf("[ updatePointsToMap ] surfaces: %li [ minimum required: > 50]\n", m_lidarCloudSurfMap->points.size());
   }
 
+  /// Update odom
+  m_odom = Eigen::Isometry3d::Identity();
+  m_odom.linear() = m_currentRotation.toRotationMatrix();
+  m_odom.translation() = m_currentTranslation;
+
   addPointsToMap(downsampledEdgeCloud, downsampledSurfCloud);
 }
 
@@ -113,6 +135,7 @@ void OdomEstimation::pointAssociateToMap(
 {
   Eigen::Vector3d pointCurrent(pointIn->x, pointIn->y, pointIn->z);
   Eigen::Vector3d point_w = m_currentRotation * pointCurrent + m_currentTranslation;
+
   pointOut->x = point_w.x();
   pointOut->y = point_w.y();
   pointOut->z = point_w.z();
@@ -143,8 +166,10 @@ void OdomEstimation::addEdgeCostFactor(
     pointAssociateToMap(&(points->points[i]), &point_temp);
     std::vector<int> pointSearchInd;
     std::vector<float> pointSearchSqDis;
-    m_kdTreeEdgeMap->nearestKSearch(point_temp, 5, pointSearchInd, pointSearchSqDis); 
-    
+    int k = 5;
+    pointSearchInd.resize(k);
+    pointSearchSqDis.resize(k);
+    m_kdTreeEdgeMap->nearestKSearch(point_temp, k, pointSearchInd, pointSearchSqDis);
     if (pointSearchSqDis[4] < 1.0)
     {
       std::vector<Eigen::Vector3d> nearCorners;
