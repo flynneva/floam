@@ -164,50 +164,54 @@ void OdomEstimation::addEdgeCostFactor(
   {
     pcl::PointXYZ point_temp;
     pointAssociateToMap(&(points->points[i]), &point_temp);
-    std::vector<int> pointSearchInd;
-    std::vector<float> pointSearchSqDis;
+
+    // nearest k neighbors search
     int k = 5;
-    pointSearchInd.resize(k);
-    pointSearchSqDis.resize(k);
-    m_kdTreeEdgeMap->nearestKSearch(point_temp, k, pointSearchInd, pointSearchSqDis);
-    if (pointSearchSqDis[4] < 1.0)
-    {
-      std::vector<Eigen::Vector3d> nearCorners;
-      Eigen::Vector3d center(0, 0, 0);
+    std::vector<int> pointSearchInd(k);
+    std::vector<float> pointSearchSqDis(k);
+
+    if (m_kdTreeEdgeMap->nearestKSearch(point_temp, k, pointSearchInd, pointSearchSqDis) > 0) {
       
-      for (int j = 0; j < 5; j++)
+      if (pointSearchSqDis[4] < 1.0)
       {
-        Eigen::Vector3d tmp(
-          map->points[pointSearchInd[j]].x,
-          map->points[pointSearchInd[j]].y,
-          map->points[pointSearchInd[j]].z);
-        center = center + tmp;
-        nearCorners.push_back(tmp);
+        std::vector<Eigen::Vector3d> nearCorners;
+        Eigen::Vector3d center(0, 0, 0);
+        
+        for (int j = 0; j < k; j++)
+        {
+          Eigen::Vector3d tmp(
+            map->points[pointSearchInd[j]].x,
+            map->points[pointSearchInd[j]].y,
+            map->points[pointSearchInd[j]].z);
+          center = center + tmp;
+          nearCorners.push_back(tmp);
+        }
+        // average
+        center = center / (float)k;
+        Eigen::Matrix3d covMat = Eigen::Matrix3d::Zero();
+        
+        for (int j = 0; j < k; j++)
+        {
+          Eigen::Matrix<double, 3, 1> tmpZeroMean = nearCorners[j] - center;
+          covMat = covMat + tmpZeroMean * tmpZeroMean.transpose();
+        }
+        
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> saes(covMat);
+        Eigen::Vector3d unit_direction = saes.eigenvectors().col(2);
+        Eigen::Vector3d curr_point(points->points[i].x, points->points[i].y, points->points[i].z);
+        
+        if (saes.eigenvalues()[2] > 3 * saes.eigenvalues()[1])
+        { 
+          Eigen::Vector3d point_on_line = center;
+          Eigen::Vector3d point_a, point_b;
+          point_a = 0.1 * unit_direction + point_on_line;
+          point_b = -0.1 * unit_direction + point_on_line;
+          ceres::CostFunction* cost_function =
+            new floam::lidar::LidarEdgeFunctor(curr_point, point_a, point_b);
+          problem.AddResidualBlock(cost_function, loss_function, m_parameters);
+          corner_num++;
+        }                           
       }
-      center = center / 5.0;
-      Eigen::Matrix3d covMat = Eigen::Matrix3d::Zero();
-      
-      for (int j = 0; j < 5; j++)
-      {
-        Eigen::Matrix<double, 3, 1> tmpZeroMean = nearCorners[j] - center;
-        covMat = covMat + tmpZeroMean * tmpZeroMean.transpose();
-      }
-      
-      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> saes(covMat);
-      Eigen::Vector3d unit_direction = saes.eigenvectors().col(2);
-      Eigen::Vector3d curr_point(points->points[i].x, points->points[i].y, points->points[i].z);
-      
-      if (saes.eigenvalues()[2] > 3 * saes.eigenvalues()[1])
-      { 
-        Eigen::Vector3d point_on_line = center;
-        Eigen::Vector3d point_a, point_b;
-        point_a = 0.1 * unit_direction + point_on_line;
-        point_b = -0.1 * unit_direction + point_on_line;
-        ceres::CostFunction* cost_function =
-              new floam::lidar::LidarEdgeFunctor(curr_point, point_a, point_b);
-        problem.AddResidualBlock(cost_function, loss_function, m_parameters);
-        corner_num++;
-      }                           
     }
   }
   
