@@ -73,7 +73,7 @@ void ScanningLidarNode::onInit()
     m_nodeHandle.getParam("min_dis", min_dis);
     m_nodeHandle.getParam("scan_lines", scan_lines);
     m_nodeHandle.getParam("edgeThreshold", edgeThreshold);
-    m_nodeHandle.getParam("top_frame_id", frameId);
+    m_nodeHandle.getParam("frame_id", frameId);
 
     m_lidar.m_settings.period = scan_period;
     m_lidar.m_settings.lines = scan_lines;
@@ -100,17 +100,17 @@ void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & po
   /// conver to pcl format
   pcl::fromROSMsg(*points, *cloudWithNaN);
 
-  geometry_msgs::TransformStamped transformStamped;
-  transformStamped = m_tf2Buffer.lookupTransform(
-    m_lidar.m_settings.common.frameId,
-    points->header.frame_id,
-    ros::Time(0));
+  // geometry_msgs::TransformStamped transformStamped;
+  // transformStamped = m_tf2Buffer.lookupTransform(
+  //   m_lidar.m_settings.common.frameId,
+  //   points->header.frame_id,
+  //   ros::Time(0));
   // transform pointclouds to new coordinate frame
-  pcl_ros::transformPointCloud<pcl::PointXYZ>(*cloudWithNaN, *cloudTransformed, transformStamped.transform);
+  // pcl_ros::transformPointCloud<pcl::PointXYZ>(*cloudWithNaN, *cloudTransformed, transformStamped.transform);
   
   std::vector<int> indices;
   /// remove NaN's from pointcloud
-  pcl::removeNaNFromPointCloud(*cloudTransformed, *cloud, indices);
+  pcl::removeNaNFromPointCloud(*cloudWithNaN, *cloud, indices);
 
   // initialize timers to calculate how long the processing takes
   std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -176,16 +176,16 @@ void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & po
   sensor_msgs::PointCloud2 edgeAndSurfaceMsg;
   pcl::toROSMsg(*edgesAndSurfaces, edgeAndSurfaceMsg);
 
-  // set header information
+  // set header timestamp same as input pointcloud
   edgeMsg.header = points->header;
   surfaceMsg.header = points->header;
   edgeAndSurfaceMsg.header = points->header;
 
-  // set new frame_id since we transformed the pointcloud to a different frame_id
-  std::string floamLidarFrame = "floam_" + points->header.frame_id;
-  edgeMsg.header.frame_id = floamLidarFrame;  // m_lidar.m_settings.common.frameId;
-  surfaceMsg.header.frame_id = floamLidarFrame;  // m_lidar.m_settings.common.frameId;
-  edgeAndSurfaceMsg.header.frame_id = floamLidarFrame; // m_lidar.m_settings.common.frameId;
+  // set new frame_id
+  std::string floamLidarFrame = m_lidar.m_settings.common.frameId;
+  edgeMsg.header.frame_id = floamLidarFrame;
+  surfaceMsg.header.frame_id = floamLidarFrame;
+  edgeAndSurfaceMsg.header.frame_id = floamLidarFrame;
 
   // publish filtered, edge and surface clouds
   m_pubEdgePoints.publish(edgeMsg);

@@ -60,26 +60,11 @@ void OdomEstimation::updatePointsToMap(
   }
   
   // init temp odom prediction object
-  Eigen::Isometry3d odomPrediction = Eigen::Isometry3d::Identity();
-
-  // get current rotation and translation
-  // m_currentRotation = Eigen::Quaterniond(m_odom.rotation());
-  // m_currentTranslation = m_odom.translation();
-
-  // FLOAM implementation, calculate predicted odom
-  odomPrediction = m_odom * (m_lastOdom.inverse() * m_odom);
-
-  // A-LOAM implementation, calculate predicted rotation and translation
-  // odomPrediction.translation() = m_currentTranslation + (m_currentRotation * m_lastTranslation);
-  // odomPrediction.linear() = Eigen::Quaterniond(m_currentRotation * m_lastRotation).toRotationMatrix();
+  Eigen::Isometry3d odomPrediction = m_odom * (m_lastOdom.inverse() * m_odom);
 
   // update odom objects
   m_lastOdom = m_odom;
   m_odom = odomPrediction;
-
-  // update rotation and translation objects
-  // m_lastTranslation = m_currentTranslation;
-  // m_lastRotation = m_currentRotation;
 
   m_currentTranslation = m_odom.translation();
   m_currentRotation = Eigen::Quaterniond(m_odom.rotation());
@@ -109,7 +94,7 @@ void OdomEstimation::updatePointsToMap(
     ceres::Solver::Options options;
     /// TODO(flynneva): make these parameters
     options.linear_solver_type = ceres::DENSE_QR;
-    options.max_num_iterations = m_optimizationCount;
+    options.max_num_iterations = 4;
     options.minimizer_progress_to_stdout = false;
     options.check_gradients = false;
     options.gradient_check_relative_precision = 1e-4;
@@ -229,49 +214,53 @@ void OdomEstimation::addSurfCostFactor(
   ceres::LossFunction * lossFunction)
 {
   int surf_num=0;
+  const int k = 5;
   for (int i = 0; i < (int)points->points.size(); i++)
   {
     pcl::PointXYZ point_temp;
     pointAssociateToMap(&(points->points[i]), &point_temp);
     std::vector<int> pointSearchInd;
     std::vector<float> pointSearchSqDis;
-    m_kdTreeSurfMap->nearestKSearch(point_temp, 5, pointSearchInd, pointSearchSqDis);
-    Eigen::Matrix<double, 5, 3> matA0;
-    Eigen::Matrix<double, 5, 1> matB0 = -1 * Eigen::Matrix<double, 5, 1>::Ones();
-    if (pointSearchSqDis[4] < 1.0)
-    {
-      for (int j = 0; j < 5; j++)
+    
+    if (m_kdTreeSurfMap->nearestKSearch(point_temp, k, pointSearchInd, pointSearchSqDis) > 0) {
+      if (pointSearchSqDis[k - 1] < 1.0)
       {
-        matA0(j, 0) = map->points[pointSearchInd[j]].x;
-        matA0(j, 1) = map->points[pointSearchInd[j]].y;
-        matA0(j, 2) = map->points[pointSearchInd[j]].z;
-      }
-      // find the norm of plane
-      Eigen::Vector3d norm = matA0.colPivHouseholderQr().solve(matB0);
-      double negative_OA_dot_norm = 1 / norm.norm();
-      norm.normalize();
+        Eigen::Matrix<double, k, 3> matA0;
+        Eigen::Matrix<double, k, 1> matB0 = -1 * Eigen::Matrix<double, k, 1>::Ones();
 
-      bool planeValid = true;
-      for (int j = 0; j < 5; j++)
-      {
-        // if OX * n > 0.2, then plane is not fit well
-        if (
-          fabs(
-            norm(0) * map->points[pointSearchInd[j]].x +
-            norm(1) * map->points[pointSearchInd[j]].y +
-            norm(2) * map->points[pointSearchInd[j]].z + negative_OA_dot_norm) > 0.2)
+        for (int j = 0; j < k; j++)
         {
-            planeValid = false;
-            break;
+          matA0(j, 0) = map->points[pointSearchInd[j]].x;
+          matA0(j, 1) = map->points[pointSearchInd[j]].y;
+          matA0(j, 2) = map->points[pointSearchInd[j]].z;
         }
-      }
-      Eigen::Vector3d curr_point(points->points[i].x, points->points[i].y, points->points[i].z);
-      if (planeValid)
-      {
-        ceres::CostFunction *cost_function =
-          new floam::lidar::LidarSurfaceFunctor(curr_point, norm, negative_OA_dot_norm);   
-        problem.AddResidualBlock(cost_function, lossFunction, m_parameters);
-        surf_num++;
+        // find the norm of plane
+        Eigen::Vector3d norm = matA0.colPivHouseholderQr().solve(matB0);
+        double negative_OA_dot_norm = 1 / norm.norm();
+        norm.normalize();
+  
+        bool planeValid = true;
+        for (int j = 0; j < k; j++)
+        {
+          // if OX * n > 0.2, then plane is not fit well
+          if (
+            fabs(
+              norm(0) * map->points[pointSearchInd[j]].x +
+              norm(1) * map->points[pointSearchInd[j]].y +
+              norm(2) * map->points[pointSearchInd[j]].z + negative_OA_dot_norm) > 0.2)
+          {
+              planeValid = false;
+              break;
+          }
+        }
+        Eigen::Vector3d curr_point(points->points[i].x, points->points[i].y, points->points[i].z);
+        if (planeValid)
+        {
+          ceres::CostFunction *cost_function =
+            new floam::lidar::LidarSurfaceFunctor(curr_point, norm, negative_OA_dot_norm);   
+          problem.AddResidualBlock(cost_function, lossFunction, m_parameters);
+          surf_num++;
+        }
       }
     }
   }
