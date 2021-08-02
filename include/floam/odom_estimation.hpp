@@ -64,8 +64,8 @@ public:
   /// Optimization parameters that ceres solvers update each loop
   double m_parameters[7] = {0, 0, 0, 1, 0, 0, 0};
 
-  Eigen::Map<Eigen::Quaterniond> m_currentRotation, m_lastRotation;
-  Eigen::Map<Eigen::Vector3d> m_currentTranslation, m_lastTranslation;
+  Eigen::Map<Eigen::Quaterniond> m_currentRotation = Eigen::Map<Eigen::Quaterniond>(m_parameters);
+  Eigen::Map<Eigen::Vector3d> m_currentTranslation = Eigen::Map<Eigen::Vector3d>(m_parameters + 4);
 
   /// kd-tree
   pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr m_kdTreeEdgeMap;

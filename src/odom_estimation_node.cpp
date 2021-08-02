@@ -99,7 +99,7 @@ void OdomEstimationNode::handleClouds(
   if (m_isInitialized == false) {
       m_odomEstimation.initMapWithPoints(pointcloud_edge_in, pointcloud_surf_in);
       m_isInitialized = true;
-      ROS_INFO_ONCE("odometry initialized");
+      ROS_INFO("odometry initialized");  // should only be called once
   } else {
       std::chrono::time_point<std::chrono::system_clock> start, end;
       start = std::chrono::system_clock::now();
@@ -113,7 +113,7 @@ void OdomEstimationNode::handleClouds(
       ROS_INFO("average odom estimation time %f ms", m_totals.time / m_totals.frames);
   }
 
-  /// get current odometry
+  /// get current odometry estimation
   m_tfGlobal->transform.translation.x = m_odomEstimation.m_currentTranslation.x();
   m_tfGlobal->transform.translation.y = m_odomEstimation.m_currentTranslation.y();
   m_tfGlobal->transform.translation.z = m_odomEstimation.m_currentTranslation.z();

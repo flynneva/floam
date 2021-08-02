@@ -14,10 +14,6 @@ namespace odom
 {
 
 OdomEstimation::OdomEstimation()
-: m_currentRotation(Eigen::Map<Eigen::Quaterniond>(m_parameters)),
-  m_currentTranslation(Eigen::Map<Eigen::Vector3d>(m_parameters + 4)),
-  m_lastRotation(Eigen::Map<Eigen::Quaterniond>(m_parameters)),
-  m_lastTranslation(Eigen::Map<Eigen::Vector3d>(m_parameters + 4))
 {
   // constructor
 }
@@ -83,23 +79,25 @@ void OdomEstimation::updatePointsToMap(
     m_kdTreeEdgeMap->setInputCloud(m_lidarCloudCornerMap);
     m_kdTreeSurfMap->setInputCloud(m_lidarCloudSurfMap);
 
-    ceres::LossFunction *loss_function = new ceres::HuberLoss(0.1);
-  
-    ceres::Problem::Options problem_options;
-    ceres::Problem problem(problem_options);
-    problem.AddParameterBlock(m_parameters, 7, new floam::lidar::PoseSE3Parameterization());
+    for (int optCount = 0; optCount < m_optimizationCount; optCount++) {
+      ceres::LossFunction *loss_function = new ceres::HuberLoss(0.1);
     
-    addEdgeCostFactor(downsampledEdgeCloud, m_lidarCloudCornerMap, problem, loss_function);
-    addSurfCostFactor(downsampledSurfCloud, m_lidarCloudSurfMap, problem, loss_function);
-    ceres::Solver::Options options;
-    /// TODO(flynneva): make these parameters
-    options.linear_solver_type = ceres::DENSE_QR;
-    options.max_num_iterations = 4;
-    options.minimizer_progress_to_stdout = false;
-    options.check_gradients = false;
-    options.gradient_check_relative_precision = 1e-4;
-    ceres::Solver::Summary summary;
-    ceres::Solve(options, &problem, &summary);
+      ceres::Problem::Options problem_options;
+      ceres::Problem problem(problem_options);
+      problem.AddParameterBlock(m_parameters, 7, new floam::lidar::PoseSE3Parameterization());
+      
+      addEdgeCostFactor(downsampledEdgeCloud, m_lidarCloudCornerMap, problem, loss_function);
+      addSurfCostFactor(downsampledSurfCloud, m_lidarCloudSurfMap, problem, loss_function);
+      ceres::Solver::Options options;
+      /// TODO(flynneva): make these parameters
+      options.linear_solver_type = ceres::DENSE_QR;
+      options.max_num_iterations = 4;
+      options.minimizer_progress_to_stdout = false;
+      options.check_gradients = false;
+      options.gradient_check_relative_precision = 1e-4;
+      ceres::Solver::Summary summary;
+      ceres::Solve(options, &problem, &summary);
+    }
   } else {
     printf("[ updatePointsToMap ] not enough points in map to associate\n");
     printf("[ updatePointsToMap ] corners: %li  [ minimum required: > 10]\n", m_lidarCloudCornerMap->points.size());
@@ -151,13 +149,13 @@ void OdomEstimation::addEdgeCostFactor(
     pointAssociateToMap(&(points->points[i]), &point_temp);
 
     // nearest k neighbors search
-    int k = 5;
+    const int k = 5;
     std::vector<int> pointSearchInd(k);
     std::vector<float> pointSearchSqDis(k);
 
     if (m_kdTreeEdgeMap->nearestKSearch(point_temp, k, pointSearchInd, pointSearchSqDis) > 0) {
-      
-      if (pointSearchSqDis[4] < 1.0)
+      // check if last nearest point is within 1.0m sq away
+      if (pointSearchSqDis[k - 1] < 1.0)
       {
         std::vector<Eigen::Vector3d> nearCorners;
         Eigen::Vector3d center(0, 0, 0);
@@ -221,7 +219,7 @@ void OdomEstimation::addSurfCostFactor(
     pointAssociateToMap(&(points->points[i]), &point_temp);
     std::vector<int> pointSearchInd;
     std::vector<float> pointSearchSqDis;
-    
+    // check if last nearest point is within 1.0m sq away
     if (m_kdTreeSurfMap->nearestKSearch(point_temp, k, pointSearchInd, pointSearchSqDis) > 0) {
       if (pointSearchSqDis[k - 1] < 1.0)
       {

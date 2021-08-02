@@ -7,7 +7,7 @@
 
 #ifndef FLOAM__ODOM_ESTIMATION_NODE_HPP_
 #define FLOAM__ODOM_ESTIMATION_NODE_HPP_
-\
+
 #include "ros/ros.h"
 #include "nodelet/nodelet.h"
 #include "sensor_msgs/PointCloud2.h"

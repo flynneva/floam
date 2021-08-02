@@ -131,7 +131,7 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
     /// loop over sectors
     for(int j = 0; j < m_settings.common.limits.sectors; j++) {
       int sector_start = sectorSize * j;
-      int sector_end = sectorSize * (j + 1);
+      int sector_end = sectorSize * (j + 1) - 1;
       if (j == (m_settings.common.limits.sectors - 1)) {
         sector_end = total_points - 1; 
       }
@@ -147,7 +147,7 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
           return a.value < b.value;
         });
 
-      for (int k = 0; k < (int)subCloudCurvature.size(); k++) {
+      for (int k = subCloudCurvature.size() -1; k >= 0; k--) {
         // get index of point
         index = subCloudCurvature[k].id;
         pcl::PointXYZL tempPointL;
