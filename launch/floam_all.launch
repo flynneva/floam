@@ -40,12 +40,12 @@
 
     <!-- mapping args -->
     <arg name="mapping_points_topic" default="/floam_lidar_node/points_filtered" />
-    <arg name="mapping_odom_topic" default="/floal_odom_node/odom" />
-    <arg name="output_map_topic" default="map" />
+    <arg name="mapping_odom_topic" default="/floam_odom_node/odom" />
+    <arg name="output_map_topic" default="/floam_mapping_node/map" />
 
     <!-- Node Manager Arguments -->
-    <arg name="node_name" default="floam" />
-    <arg name="manager_name" default="$(arg node_name)_manager" />
+    <arg name="node_name_base" default="floam" />
+    <arg name="manager_name" default="$(arg node_name_base)_manager" />
     <arg name="global_manager_name" default="/$(arg manager_name)" />
     <!-- set `new_manager` to false if you have already launched a nodelet manager elsewhere -->
     <!-- if false, be sure you set the `manager_name` to your nodelet manager's name -->

@@ -108,7 +108,7 @@ void OdomEstimationNode::handleClouds(
       m_totals.frames++;
       float time_temp = elapsed_seconds.count() * 1000;
       m_totals.time += time_temp;
-      ROS_INFO("average odom estimation time %f ms", m_totals.time / m_totals.frames);
+      // ROS_INFO("average odom estimation time %f ms", m_totals.time / m_totals.frames);
   }
 
   /// get current odometry estimation

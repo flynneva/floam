@@ -46,8 +46,8 @@ class LidarMapping
     public:
     	LidarMapping();
 		void init(double map_resolution);
-		void updateCurrentPointsToMap(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_in, const Eigen::Isometry3d& pose_current);
-		pcl::PointCloud<pcl::PointXYZI>::Ptr getMap(void);
+		void updateCurrentPointsToMap(const pcl::PointCloud<pcl::PointXYZL>::Ptr& pc_in, const Eigen::Isometry3d& pose_current);
+		pcl::PointCloud<pcl::PointXYZL>::Ptr getMap(void);
 
 	private:
 		int origin_in_map_x;
@@ -56,8 +56,8 @@ class LidarMapping
 		int map_width;
 		int map_height;
 		int map_depth;
-		std::vector<std::vector<std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>>> map;
-		pcl::VoxelGrid<pcl::PointXYZI> downSizeFilter;
+		std::vector<std::vector<std::vector<pcl::PointCloud<pcl::PointXYZL>::Ptr>>> map;
+		pcl::VoxelGrid<pcl::PointXYZL> downSizeFilter;
 		
 		void addWidthCellNegative(void);
 		void addWidthCellPositive(void);

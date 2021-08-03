@@ -2,28 +2,29 @@
 <launch>
     <arg name="frame_id" default="base_link" />
     <arg name="lidar_frame_id" default="velodyne" />
-    <arg name="use_exact_sync" default="false" />
+    <arg name="use_exact_sync" default="true" />
     <arg name="queue_size" default="10" />
     <arg name="map_resolution" default="10" />
     <arg name="mapping_points_topic" default="/floam_lidar_node/points_filtered" />
-    <arg name="mapping_odom_topic" default="/floal_odom_node/odom" />
-    <arg name="output_map_topic" default="map" />
+    <arg name="mapping_odom_topic" default="/floam_odom_node/odom" />
+    <arg name="output_map_topic" default="/floam_mapping_node/map" />
 
     <!-- Node Manager Arguments -->
-    <arg name="node_name" value="floam" />
-    <arg name="manager_name" value="$(arg node_name)_manager" />
+    <arg name="node_name_base" value="floam" />
+    <arg name="node_name" value="$(arg node_name_base)_mapping_node" />
+    <arg name="manager_name" value="$(arg node_name_base)_manager" />
     <arg name="global_manager_name" value="/$(arg manager_name)" />
 
     <!-- floam mapping node -->
-    <node pkg="nodelet" type="nodelet" name="$(arg node_name)_mapping_node"
+    <node pkg="nodelet" type="nodelet" name="$(arg node_name)"
       args="load floam/lidar/LidarMappingNode $(arg global_manager_name)" output="screen">
       <param name="use_exact_sync" value="$(arg use_exact_sync)" />
       <param name="queue_size" value="$(arg queue_size)" />
       <param name="map_resolution" value="$(arg map_resolution)" />
 
-      <remap from="points_filtered" to="$(arg mapping_points_topic)" />
-      <remap from="odom" to="$(arg mapping_odom_topic)" />
-      <remap from="map" to="$(arg output_map_topic)" />
+      <remap from="$(arg node_name)/points_filtered" to="$(arg mapping_points_topic)" />
+      <remap from="$(arg node_name)/odom" to="$(arg mapping_odom_topic)" />
+      <remap from="$(arg node_name)/map" to="$(arg output_map_topic)" />
     </node>
 
     <node pkg="tf" type="static_transform_publisher" name="world2map_tf"  args="0 0 0 0 0 0 world map 10" />

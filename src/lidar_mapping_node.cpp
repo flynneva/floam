@@ -49,20 +49,20 @@ void LidarMappingNode::onInit()
   m_lidarMapping.init(map_resolution);
 
   // should these topic names be parameters instead of remapped?
-  message_filters::Subscriber<sensor_msgs::PointCloud2> subPoints(m_nodeHandle, "points_filtered", 100);
-  message_filters::Subscriber<nav_msgs::Odometry> subOdom(m_nodeHandle, "odom", 100);
+  m_subPoints.subscribe(m_nodeHandle, "points_filtered", 100);
+  m_subOdom.subscribe(m_nodeHandle, "odom", 100);
   
   m_pubMap = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("map", 100);
 
   // initialize callbacks using sync policy
   if (m_useExactSync) {
-    ROS_INFO("Exact Synchronization Policy chosen");
-    m_exactSync.reset(new ExactSynchronizer(ExactSyncPolicy(m_queueSize), subOdom, subPoints));
+    ROS_INFO("Exact Synchronization Policy chosen for Mapping");
+    m_exactSync.reset(new ExactSynchronizer(ExactSyncPolicy(m_queueSize), m_subOdom, m_subPoints));
     m_exactSync->registerCallback(
       std::bind(&LidarMappingNode::generateMap, this, std::placeholders::_1, std::placeholders::_2));
   } else {
-    ROS_INFO("Approximate Synchronization Policy chosen");
-    m_approximateSync.reset(new ApproximateSynchronizer(ApproximateSyncPolicy(m_queueSize), subOdom, subPoints));
+    ROS_INFO("Approximate Synchronization Policy chosen for Mapping");
+    m_approximateSync.reset(new ApproximateSynchronizer(ApproximateSyncPolicy(m_queueSize), m_subOdom, m_subPoints));
     m_approximateSync->registerCallback(
       std::bind(&LidarMappingNode::generateMap, this, std::placeholders::_1, std::placeholders::_2));
   }
@@ -72,7 +72,7 @@ void LidarMappingNode::generateMap(
   const nav_msgs::OdometryConstPtr & odom,
   const sensor_msgs::PointCloud2ConstPtr & cloud)
 {
-  pcl::PointCloud<pcl::PointXYZI>::Ptr pointcloud_in(new pcl::PointCloud<pcl::PointXYZI>());
+  pcl::PointCloud<pcl::PointXYZL>::Ptr pointcloud_in(new pcl::PointCloud<pcl::PointXYZL>());
   pcl::fromROSMsg(*cloud, *pointcloud_in);
   ros::Time pointcloud_time = cloud->header.stamp;
 
@@ -91,8 +91,8 @@ void LidarMappingNode::generateMap(
       odom->pose.pose.position.y,
       odom->pose.pose.position.z));
 
-  m_lidarMapping.updateCurrentPointsToMap(pointcloud_in,current_pose);
-  pcl::PointCloud<pcl::PointXYZI>::Ptr pc_map = m_lidarMapping.getMap();
+  m_lidarMapping.updateCurrentPointsToMap(pointcloud_in, current_pose);
+  pcl::PointCloud<pcl::PointXYZL>::Ptr pc_map = m_lidarMapping.getMap();
   sensor_msgs::PointCloud2 PointsMsg;
   pcl::toROSMsg(*pc_map, PointsMsg);
   PointsMsg.header.stamp = pointcloud_time;

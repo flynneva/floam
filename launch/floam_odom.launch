@@ -8,14 +8,16 @@
     <arg name="map_resolution" default="0.4" />
     <arg name="edge_cloud_topic" default="/floam_lidar_node/points_edge" />
     <arg name="surface_cloud_topic" default="/floam_lidar_node/points_surface" />
+    <arg name="odom_topic" default="/floam_odom_node/odom" />
 
     <!-- Node Manager Arguments -->
-    <arg name="node_name" value="floam" />
-    <arg name="manager_name" value="$(arg node_name)_manager" />
+    <arg name="node_name_base" value="floam" />
+    <arg name="node_name" value="$(arg node_name_base)_odom_node" />
+    <arg name="manager_name" value="$(arg node_name_base)_manager" />
     <arg name="global_manager_name" value="/$(arg manager_name)" />
 
     <!-- floam odom node -->
-    <node pkg="nodelet" type="nodelet" name="$(arg node_name)_odom_node"
+    <node pkg="nodelet" type="nodelet" name="$(arg node_name)"
       args="load floam/odom/OdomEstimationNode $(arg global_manager_name)" output="screen">
       <param name="use_exact_sync" value="$(arg use_exact_sync)" />
       <param name="queue_size" value="$(arg queue_size)" />
@@ -24,7 +26,9 @@
       <param name="parent_frame_id" value="$(arg odom_parent_frame_id)" />
 
       <!-- input topics -->
-      <remap from="$(arg node_name)_odom_node/points_edge" to="$(arg edge_cloud_topic)" />
-      <remap from="$(arg node_name)_odom_node/points_surface" to="$(arg surface_cloud_topic)" />
+      <remap from="$(arg node_name)/points_edge" to="$(arg edge_cloud_topic)" />
+      <remap from="$(arg node_name)/points_surface" to="$(arg surface_cloud_topic)" />
+      <remap from="$(arg node_name)/odom" to="$(arg odom_topic)" />
+
     </node>
 </launch>
