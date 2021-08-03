@@ -5,7 +5,7 @@
     <arg name="odom_parent_frame_id" default="map" />
     <arg name="use_exact_sync" default="true" />
     <arg name="queue_size" default="5" />
-    <arg name="map_resolution" default="5" />
+    <arg name="map_resolution" default="0.4" />
     <arg name="edge_cloud_topic" default="/floam_lidar_node/points_edge" />
     <arg name="surface_cloud_topic" default="/floam_lidar_node/points_surface" />
 

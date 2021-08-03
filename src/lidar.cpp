@@ -102,19 +102,30 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
     int sectorSize = (int)lidarScans[i]->points.size() / m_settings.common.limits.sectors;
 
     double diffX, diffY, diffZ = 0;
+    double diffTotal, diffLeft, diffRight = 0;
+    double tempX, tempY, tempZ = 0;
     for(int j = halfWindow; j < (int)(lidarScans[i]->points.size() - halfWindow); j += 1) {
       // reset diff's at new point
       diffX = 0;
       diffY = 0;
       diffZ = 0;
+      diffTotal = 0;
+      diffLeft = 0;
+      diffRight = 0;
 
       for (int k = -halfWindow; k <= halfWindow; k++) {
         // the middle point of each window is the "baseline"
         if (k == 0) {
+          // calculate diff for window so far (-halfWindow to 0)
+          tempX = diffX - (halfWindow * lidarScans[i]->points[j].x);
+          tempY = diffY - (halfWindow * lidarScans[i]->points[j].y);
+          tempZ = diffZ - (halfWindow * lidarScans[i]->points[j].z);
+          diffLeft = tempX * tempX + tempY * tempY + tempZ * tempZ;
+
           // subtract middle point * size (because we add the rest of the points)
-          diffX -= windowSize * lidarScans[i]->points[j + k].x;
-          diffY -= windowSize * lidarScans[i]->points[j + k].y;
-          diffZ -= windowSize * lidarScans[i]->points[j + k].z;
+          diffX -= windowSize * lidarScans[i]->points[j].x;
+          diffY -= windowSize * lidarScans[i]->points[j].y;
+          diffZ -= windowSize * lidarScans[i]->points[j].z;
         } else {
           // add points left and right of middle of window
           diffX += lidarScans[i]->points[j + k].x;
@@ -124,12 +135,16 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
       }
       // if diff total is large, sector is very curved or could be an edge
       // j - 1 to store actual location in points index
-      floam::lidar::Double2d distance(j - 1, diffX * diffX + diffY * diffY + diffZ * diffZ);
+      diffTotal = diffX * diffX + diffY * diffY + diffZ * diffZ;
+      // diff for right half of window should be total take away the left diff
+      diffRight = diffTotal - diffLeft;
+      floam::lidar::Double2d distance(j - 1, diffTotal, diffLeft, diffRight);
       cloudCurvature.push_back(distance);
     }
     /// end of potential cloudCurvature func
 
     int index = 0;
+    double halfThreshold = m_settings.common.limits.edgeThreshold / 2;
     /// loop over sectors
     for(int j = 0; j < m_settings.common.limits.sectors; j++) {
       int sectorStart = sectorSize * j;
@@ -147,7 +162,7 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
       std::sort(subCloudCurvature.begin(), subCloudCurvature.end(),
         [](const floam::lidar::Double2d & a, const floam::lidar::Double2d & b)
         { 
-          return a.value < b.value;
+          return a.diffTotal < b.diffTotal;
         });
 
 
@@ -161,13 +176,21 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
         tempPointL.z = lidarScans[i]->points[index].z;
 
         // determine if point is an edge or surface
-        if (subCloudCurvature[k].value <= m_settings.common.limits.edgeThreshold)
+        if (subCloudCurvature[k].diffTotal <= m_settings.common.limits.edgeThreshold)
         {
           // value is smaller than threshold, so it is not an edge and assume its a surface
           tempPointL.label = 0;
         } else {
-          // value is large so this sector is very curved or could be an edge
-          tempPointL.label = 1;
+          // check to see if it is an edge or just close to an edge on one side
+          if (subCloudCurvature[k].diffLeft >= halfThreshold &&
+            subCloudCurvature[k].diffRight >= halfThreshold)
+          {
+            // value is large so this sector is very curved or could be an edge
+            tempPointL.label = 1;
+          } else {
+            // still actually a surface
+            tempPointL.label = 0;
+          }
         }
         edges->push_back(tempPointL);
       }

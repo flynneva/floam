@@ -88,8 +88,14 @@ struct Edge {
 class Double2d{
 public:
 	int id;
-	double value;
-	Double2d(int id_in, double value_in);
+	double diffTotal;
+  double diffLeft;
+  double diffRight;
+	Double2d(
+    const int & id,
+    const double & diffTotal,
+    const double & diffLeft,
+    const double & diffRight);
 };
 
 //points info class

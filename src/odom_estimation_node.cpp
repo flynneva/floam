@@ -41,22 +41,20 @@ void OdomEstimationNode::onInit()
 {
   m_nodeHandle = getPrivateNodeHandle();
 
-  int map_resolution;
-
   m_nodeHandle.getParam("use_exact_sync", m_useExactSync);
   m_nodeHandle.getParam("queue_size", m_queueSize);
-  m_nodeHandle.getParam("map_resolution", map_resolution);
+  m_nodeHandle.getParam("map_resolution", m_mapResolution);
   m_nodeHandle.getParam("frame_id", m_frameId);
   m_nodeHandle.getParam("parent_frame_id", m_parentFrameId);
 
-  m_odomEstimation.init(map_resolution);
+  m_odomEstimation.init(m_mapResolution);
 
 
   ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/frame_id: " << m_frameId);
   ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/parent_frame_id: " << m_parentFrameId);
   ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/use_exact_sync: " << m_useExactSync);
   ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/queue_size: " << m_queueSize);
-  ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/map_resolution: " << map_resolution);
+  ROS_INFO_STREAM(m_nodeHandle.getNamespace() << "/map_resolution: " << m_mapResolution);
 
   m_tfGlobal.reset(new geometry_msgs::TransformStamped());
 

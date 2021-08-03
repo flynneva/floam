@@ -21,7 +21,7 @@
     <!-- default to true, timestamps will always match if using floam lidar nodes -->
     <!-- will only be false if user chooses to implement their own lidar processing nodes -->
     <arg name="use_exact_sync" default="true" />
-    <arg name="map_resolution" default="10" />
+    <arg name="map_resolution" default="0.4" />
     <arg name="queue_size" default="10" />
     
     <arg name="edge_threshold" default="0.05" />

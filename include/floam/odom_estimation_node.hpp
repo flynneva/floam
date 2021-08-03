@@ -76,6 +76,8 @@ private:
 
   int m_queueSize = 5;
 
+  double m_mapResolution = 0.4;
+
   std::string m_frameId, m_parentFrameId;
 
   floam::lidar::Total m_totals;

@@ -37,7 +37,7 @@ void OdomEstimation::init(double mapResolution) {
 
 void OdomEstimation::initMapWithPoints(
   const pcl::PointCloud<pcl::PointXYZ>::Ptr & edges,
-  const pcl::PointCloud<pcl::PointXYZ>::Ptr& surfaces)
+  const pcl::PointCloud<pcl::PointXYZ>::Ptr & surfaces)
 {
   *m_lidarCloudCornerMap += *edges;
   *m_lidarCloudSurfMap += *surfaces;
@@ -71,7 +71,6 @@ void OdomEstimation::updatePointsToMap(
   /// generate map from edges and surfaces
   downSamplingToMap(edges, downsampledEdgeCloud, surfaces, downsampledSurfCloud);
   
-  //ROS_WARN("point nyum%d,%d",(int)downsampledEdgeCloud->points.size(), (int)downsampledSurfCloud->points.size());
   // TODO(flynneva): make these limits parameters?
   if (m_lidarCloudCornerMap->points.size() > 10 &&
       m_lidarCloudSurfMap->points.size() > 50)

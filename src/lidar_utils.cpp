@@ -28,14 +28,21 @@ Imager::~Imager()
   // destructor
 }
 
-Double2d::Double2d(int id_in, double value_in) {
-  id = id_in;
-  value = value_in;
+Double2d::Double2d(
+  const int & id,
+  const double & diffTotal,
+  const double & diffLeft,
+  const double & diffRight)
+{
+  this->id = id;
+  this->diffTotal = diffTotal;
+  this->diffLeft = diffLeft;
+  this->diffRight = diffRight;
 };
 
 PointsInfo::PointsInfo(int layer_in, double time_in) {
-  layer = layer_in;
-  time = time_in;
+  this->layer = layer_in;
+  this->time = time_in;
 };
 
 }  // namespace lidar
