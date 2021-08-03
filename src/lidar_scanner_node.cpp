@@ -72,7 +72,7 @@ void ScanningLidarNode::onInit()
     m_nodeHandle.getParam("max_dis", max_dis);
     m_nodeHandle.getParam("min_dis", min_dis);
     m_nodeHandle.getParam("scan_lines", scan_lines);
-    m_nodeHandle.getParam("edgeThreshold", edgeThreshold);
+    m_nodeHandle.getParam("edge_threshold", edgeThreshold);
     m_nodeHandle.getParam("frame_id", frameId);
 
     m_lidar.m_settings.period = scan_period;

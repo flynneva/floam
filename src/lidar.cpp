@@ -79,7 +79,7 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
   }
 
   for(int i = 0; i < N_SCANS; i++) {
-    /// why 131?
+    /// (flynneva) why 131?
     if(lidarScans[i]->points.size() < 131) {
       continue;
     }
@@ -89,30 +89,34 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
     /// input: points, sectorSize
     /// output: cloudCurvature
     std::vector<floam::lidar::Double2d> cloudCurvature;
-    // size of grid of points
-    // TODO(flynneva): make sectorSize adjustable
-    int sectorSize = 10;
-    int halfSector = sectorSize / 2;
-    // (TODO: flynneva): do we really need to subtract the sectorSize from the total points?
-    int total_points = lidarScans[i]->points.size() - sectorSize;
-    // calculate number of sectors
-    m_settings.common.limits.sectors = (int)(total_points / sectorSize);
+    // size of window to calculate curvature of
+    // TODO(flynneva): make windowSize adjustable
+    int windowSize = 10;
+    int halfWindow = windowSize / 2;
+    // (TODO: flynneva): do we really need to subtract the windowSize from the total points?
+    int totalPoints = lidarScans[i]->points.size() - windowSize;
   
+    // calculate number of sectors and the length/size of each sector
+    // TODO(flynneva): make sectors a parameter?
+    m_settings.common.limits.sectors = 6;
+    int sectorSize = (int)lidarScans[i]->points.size() / m_settings.common.limits.sectors;
+
     double diffX, diffY, diffZ = 0;
-    for(int j = halfSector; j < (int)(lidarScans[i]->points.size() - halfSector); j += 1) {
+    for(int j = halfWindow; j < (int)(lidarScans[i]->points.size() - halfWindow); j += 1) {
       // reset diff's at new point
       diffX = 0;
       diffY = 0;
       diffZ = 0;
-      for (int k = -halfSector; k <= halfSector; k++) {
-        // the middle point )of each sector is the "baseline"
+
+      for (int k = -halfWindow; k <= halfWindow; k++) {
+        // the middle point of each window is the "baseline"
         if (k == 0) {
           // subtract middle point * size (because we add the rest of the points)
-          diffX -= sectorSize * lidarScans[i]->points[j + k].x;
-          diffY -= sectorSize * lidarScans[i]->points[j + k].y;
-          diffZ -= sectorSize * lidarScans[i]->points[j + k].z;
+          diffX -= windowSize * lidarScans[i]->points[j + k].x;
+          diffY -= windowSize * lidarScans[i]->points[j + k].y;
+          diffZ -= windowSize * lidarScans[i]->points[j + k].z;
         } else {
-          // add points left and right of middle of sector
+          // add points left and right of middle of window
           diffX += lidarScans[i]->points[j + k].x;
           diffY += lidarScans[i]->points[j + k].y;
           diffZ += lidarScans[i]->points[j + k].z;
@@ -123,22 +127,21 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
       floam::lidar::Double2d distance(j - 1, diffX * diffX + diffY * diffY + diffZ * diffZ);
       cloudCurvature.push_back(distance);
     }
-    /// end cloudCurvature func
+    /// end of potential cloudCurvature func
 
-
-    int edgesCount = 1;
     int index = 0;
     /// loop over sectors
     for(int j = 0; j < m_settings.common.limits.sectors; j++) {
-      int sector_start = sectorSize * j;
-      int sector_end = sectorSize * (j + 1) - 1;
+      int sectorStart = sectorSize * j;
+      int sectorEnd = sectorSize * (j + 1) - 1;
+      // for last sector, sectorEnd is last point (may or may not be the same size as the rest of the sectors)
       if (j == (m_settings.common.limits.sectors - 1)) {
-        sector_end = total_points - 1; 
+        sectorEnd = totalPoints - 1; 
       }
 
       std::vector<floam::lidar::Double2d> subCloudCurvature(
-        cloudCurvature.begin() + sector_start,
-        cloudCurvature.begin() + sector_end); 
+        cloudCurvature.begin() + sectorStart,
+        cloudCurvature.begin() + sectorEnd); 
 
       // sort diff's within sector
       std::sort(subCloudCurvature.begin(), subCloudCurvature.end(),
@@ -147,24 +150,27 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
           return a.value < b.value;
         });
 
-      for (int k = subCloudCurvature.size() -1; k >= 0; k--) {
+
+      // determine if point is an edge or a surface
+      for (int k = subCloudCurvature.size() - 1; k >= 0; k--) {
         // get index of point
         index = subCloudCurvature[k].id;
         pcl::PointXYZL tempPointL;
         tempPointL.x = lidarScans[i]->points[index].x;
         tempPointL.y = lidarScans[i]->points[index].y;
         tempPointL.z = lidarScans[i]->points[index].z;
-        if (subCloudCurvature[k].value <= m_settings.common.limits.edgeThreshold) {
-          // value is small, is not an edge and assume its a surface
+
+        // determine if point is an edge or surface
+        if (subCloudCurvature[k].value <= m_settings.common.limits.edgeThreshold)
+        {
+          // value is smaller than threshold, so it is not an edge and assume its a surface
           tempPointL.label = 0;
         } else {
           // value is large so this sector is very curved or could be an edge
-          tempPointL.label = 1;  // edgesCount;
+          tempPointL.label = 1;
         }
         edges->push_back(tempPointL);
       }
-      // increment edge count on different sector
-      edgesCount++;
     }
   }
 
