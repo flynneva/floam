@@ -1,8 +1,12 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="points_topic" default="points" />
-    <!-- new frame id for edge and surface pointclouds -->
+    <arg name="points_topic" default="/hfl118_front/points" />
     <arg name="frame_id" default="base_link" />
+    <!-- your datas lidar frame_id, the same frame_id as your points topic -->
+    <arg name="lidar_frame_id" default="hfl118_front" />
+    <!-- floam's new frame_id to not interfere with any existing tf tree -->
+    <!-- always starts with `floam_` and then your lidars frame_id -->
+    <arg name="floam_frame_id" default="floam_$(arg lidar_frame_id)" />
     <arg name="max_distance" default="90" />
     <arg name="min_distance" default="0.5" />
 
@@ -14,6 +18,8 @@
     
     <!-- Nodelet Manager -->
     <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" if="$(arg new_manager)" />
+    
+    <node pkg="tf" type="static_transform_publisher" name="frame2floam_tf"  args="0 0 0 0 0 0 $(arg frame_id) $(arg floam_frame_id) 10" />
 
     <!-- floam imaging lidar node -->
     <node pkg="nodelet" type="nodelet" name="$(arg node_name)_lidar_node"
@@ -25,13 +31,4 @@
         <param name="min_dis" type="double" value="$(arg min_distance)" />
     </node>
   
-    <node pkg="tf" type="static_transform_publisher" name="map2baselink_tf"  args="0 0 0 0 0 0 /map /$(arg frame_id) 10" />
-
-    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server_loam" ns="$(arg frame_id)" >
-        <param name="/target_frame_name" value="map" />
-        <param name="/source_frame_name" value="$(arg frame_id)" />
-        <param name="/trajectory_update_rate" value="10.0" />
-        <param name="/trajectory_publish_rate" value="10.0" />
-    </node>
-
 </launch>

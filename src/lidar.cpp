@@ -73,13 +73,15 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
         continue;
       }
     } else {
-      printf("wrong scan number\n");
+      // assume "single scan"
+      scanID = 0;
     }
     lidarScans[scanID]->push_back(points->points[i]); 
   }
 
   for(int i = 0; i < N_SCANS; i++) {
     /// (flynneva) why 131?
+    // if pointcloud is too small, ignore it
     if(lidarScans[i]->points.size() < 131) {
       continue;
     }
@@ -208,19 +210,16 @@ void Lidar<floam::lidar::Imager>::detectEdges(
   // pointcloud in has to be organized (i.e. height and width)
   pcl::OrganizedEdgeBase <pcl::PointXYZ, pcl::Label> edgeDetector;
   pcl::PointCloud<pcl::Label>::Ptr labels;
+
   std::vector<pcl::PointIndices> indicies;
   edgeDetector.setInputCloud(points);
+
   // TODO(flynneva): make these adjustable
   edgeDetector.setDepthDisconThreshold(0.02f);
   edgeDetector.setMaxSearchNeighbors(50);
 
-  std::cout << "cloud width: " << points->width << std::endl;
-  std::cout << "cloud height: " << points->height << std::endl;
-  std::cout << "is_dense: " << points->is_dense << std::endl;
-  std::cout << "isOrganized: " << points->isOrganized() << std::endl;
   // calculate edges
   edgeDetector.compute(*labels, indicies);
-
   // combine xyz cloud with labels
   pcl::concatenateFields(*points, *labels, *edges);
 }
@@ -264,11 +263,6 @@ void Lidar<floam::lidar::Imager>::detectSurfaces(
   normalDetector.setMaxDepthChangeFactor(0.02f);
   normalDetector.setNormalSmoothingSize(7.0f);
   normalDetector.setInputCloud(points);
-
-  std::cout << "cloud width: " << points->width << std::endl;
-  std::cout << "cloud height: " << points->height << std::endl;
-  std::cout << "is_dense: " << points->is_dense << std::endl;
-  std::cout << "isOrganized: " << points->isOrganized() << std::endl;
 
   normalDetector.compute(normalCloud);
 
