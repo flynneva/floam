@@ -97,7 +97,7 @@ void LidarMappingNode::generateMap(
   pcl::toROSMsg(*pc_map, PointsMsg);
   PointsMsg.header.stamp = pointcloud_time;
   PointsMsg.header.frame_id = "map";
-  m_pubMap.publish(PointsMsg); 
+  m_pubMap.publish(PointsMsg);
 }
 
 }  // namespace lidar

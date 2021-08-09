@@ -33,17 +33,34 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
       lidarScans.push_back(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>()));
   }
 
+  // initialize kdTree for nearest neighbor search
+  pcl::KdTreeFLANN<pcl::PointXYZ> kdTree;
+  kdTree.setInputCloud(points);
+
+  // TODO(flynneva): make these parameters?
+  // number of nearest neighbors to search for
+  int kNN = 10;
+  std::vector<int> pointIdxRadiusSearch;
+  std::vector<float> pointRadiusSquaredDistance;
+
+  double diffX, diffY, diffZ = 0;
+  double diffTotal, diffLeft, diffRight = 0;
+  double tempX, tempY, tempZ = 0;
+
+  int index = 0;
   // separate out pointcloud into different scan lines
   // essentially trying to make it an "ordered pointcloud"
   for (int i = 0; i < (int) points->points.size(); i++)
   {
     int scanID=0;
 
+    /// calculate radial distance to point
     double distance =
       sqrt(
         points->points[i].x * points->points[i].x +
         points->points[i].y * points->points[i].y);
 
+    // filter pointcloud by min and max distance settings
     if (distance < m_settings.common.limits.distance.min ||
         distance > m_settings.common.limits.distance.max)
     {
@@ -73,10 +90,41 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
         continue;
       }
     } else {
-      // assume "single scan"
-      scanID = 0;
+      // assume single scan, use kdTree to do nearest K neighbor search
+      if(
+        kdTree.nearestKSearch(
+          points->points[i], kNN, pointIdxRadiusSearch,
+          pointRadiusSquaredDistance) > 0)
+      {
+        // reset diff
+        diffTotal = 0;
+        // points found within radius
+        for(std::size_t j = 0; j < pointIdxRadiusSearch.size(); ++j) {
+          // sum up squared distances
+          diffTotal += pointRadiusSquaredDistance[j];
+        }
+        // get current point
+        pcl::PointXYZL tempPointL;
+        tempPointL.x = points->points[i].x;
+        tempPointL.y = points->points[i].y;
+        tempPointL.z = points->points[i].z;
+        if (diffTotal <= m_settings.common.limits.edgeThreshold) {
+          // value is smaller than threshold, so assume it is a surface
+          tempPointL.label = 0;
+        } else {
+          // value is larger than threshold, assume it is an edge
+          tempPointL.label = 1;
+        }
+        edges->push_back(tempPointL);
+        continue;
+      }
     }
-    lidarScans[scanID]->push_back(points->points[i]); 
+    lidarScans[scanID]->push_back(points->points[i]);
+  }
+
+  // check to see if we already detected the edges
+  if (!edges->empty()) {
+    return;
   }
 
   for(int i = 0; i < N_SCANS; i++) {
@@ -103,9 +151,6 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
     m_settings.common.limits.sectors = 6;
     int sectorSize = (int)lidarScans[i]->points.size() / m_settings.common.limits.sectors;
 
-    double diffX, diffY, diffZ = 0;
-    double diffTotal, diffLeft, diffRight = 0;
-    double tempX, tempY, tempZ = 0;
     for(int j = halfWindow; j < (int)(lidarScans[i]->points.size() - halfWindow); j += 1) {
       // reset diff's at new point
       diffX = 0;
@@ -138,14 +183,12 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
       // if diff total is large, sector is very curved or could be an edge
       // j - 1 to store actual location in points index
       diffTotal = diffX * diffX + diffY * diffY + diffZ * diffZ;
-      // diff for right half of window should be total take away the left diff
       diffRight = diffTotal - diffLeft;
       floam::lidar::Double2d distance(j - 1, diffTotal, diffLeft, diffRight);
       cloudCurvature.push_back(distance);
     }
     /// end of potential cloudCurvature func
 
-    int index = 0;
     double halfThreshold = m_settings.common.limits.edgeThreshold / 2;
     /// loop over sectors
     for(int j = 0; j < m_settings.common.limits.sectors; j++) {
@@ -167,7 +210,6 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
           return a.diffTotal < b.diffTotal;
         });
 
-
       // determine if point is an edge or a surface
       for (int k = subCloudCurvature.size() - 1; k >= 0; k--) {
         // get index of point
@@ -183,22 +225,12 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
           // value is smaller than threshold, so it is not an edge and assume its a surface
           tempPointL.label = 0;
         } else {
-          // check to see if it is an edge or just close to an edge on one side
-          if (subCloudCurvature[k].diffLeft >= halfThreshold &&
-            subCloudCurvature[k].diffRight >= halfThreshold)
-          {
-            // value is large so this sector is very curved or could be an edge
-            tempPointL.label = 1;
-          } else {
-            // still actually a surface
-            tempPointL.label = 0;
-          }
+          tempPointL.label = 1;
         }
         edges->push_back(tempPointL);
       }
     }
   }
-
 }
 
 /// Imager type

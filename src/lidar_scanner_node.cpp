@@ -123,8 +123,7 @@ void ScanningLidarNode::handlePoints(const sensor_msgs::PointCloud2ConstPtr & po
 
   // for scanners, edge pointcloud should also include surface information
   m_lidar.detectEdges(cloud, edgesAndSurfaces);
-  // m_lidar.detectSurfaces(cloud, normals);
-
+  
   // separate edge cloud into edge and surface clouds
   auto edge_cond = pcl::make_shared<floam::lidar::GenericCondition<pcl::PointXYZL>>(
     [](const pcl::PointXYZL & point) {

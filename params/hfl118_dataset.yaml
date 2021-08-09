@@ -1,0 +1,33 @@
+# new frame id for edge and surface pointclouds
+frame_id: "base_link"
+
+# your datas lidar frame_id, the same frame_id as your points topic
+lidar_frame_id: "hfl118_front"
+
+# floam's new frame_id to not interfere with any existing tf tree
+floam_frame_id: "floam_hfl118_front"
+
+# input pointcloud topic
+points_topic: "/hfl118_front/points_best"
+
+# min/max distance cutoffs
+min_distance: 0.85
+max_distance: 50
+
+# output map resolution
+map_resolution: 0.4
+
+queue_size: 10
+
+# threshold to set a point either an edge or a surface
+edge_thresold: 0.05
+
+# odometry node arguments
+odom_parent_frame_id: "map"
+edge_cloud_topic: "/floam_lidar_node/points_edge"
+surface_cloud_topic: "/floam_lidar_node/points_surface"
+
+# mapping node arguments
+mapping_points_topic: "/floam_lidar_node/points_filtered"
+mapping_odom_topic: "/floam_odom_node/odom"
+output_map_topic: "/floam_mapping_node/map"

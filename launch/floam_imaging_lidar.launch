@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="points_topic" default="/hfl118_front/points" />
+    <arg name="points_topic" default="points" />
     <arg name="frame_id" default="base_link" />
     <!-- your datas lidar frame_id, the same frame_id as your points topic -->
     <arg name="lidar_frame_id" default="hfl118_front" />

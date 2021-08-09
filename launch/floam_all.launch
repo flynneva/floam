@@ -7,28 +7,28 @@
     <param name="/use_sim_time" value="true" />
 
     <!-- common args -->
-    <arg name="points_topic" default="/velodyne_points" />
+    <arg name="points_topic" default="/hrl131_front/points" />
     <!-- new frame id for edge and surface pointclouds -->
     <arg name="frame_id" default="base_link" />
     <!-- your datas lidar frame_id, the same frame_id as your points topic -->
-    <arg name="lidar_frame_id" default="velodyne" />
+    <arg name="lidar_frame_id" default="hrl131_front" />
     <!-- floam's new frame_id to not interfere with any existing tf tree -->
     <!-- always starts with `floam_` and then your lidars frame_id -->
     <arg name="floam_frame_id" default="floam_$(arg lidar_frame_id)" />
 
-    <arg name="max_distance" default="90" />
+    <arg name="max_distance" default="200" />
     <arg name="min_distance" default="0.5" />
     <!-- default to true, timestamps will always match if using floam lidar nodes -->
     <!-- will only be false if user chooses to implement their own lidar processing nodes -->
     <arg name="use_exact_sync" default="true" />
     <arg name="map_resolution" default="0.4" />
-    <arg name="queue_size" default="10" />
+    <arg name="queue_size" default="100" />
     
     <arg name="edge_threshold" default="0.05" />
 
     <!-- scanning lidar args -->
-    <arg name="scan_lines" default="64" />
-    <arg name="period" default="0.1" />
+    <arg name="scan_lines" default="1" />
+    <arg name="period" default="0.2" />
 
     <!-- imaging lidar args -->
 
