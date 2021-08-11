@@ -49,7 +49,7 @@ void LidarMappingNode::onInit()
   m_lidarMapping.init(map_resolution);
 
   // should these topic names be parameters instead of remapped?
-  m_subPoints.subscribe(m_nodeHandle, "points_filtered", 100);
+  m_subPoints.subscribe(m_nodeHandle, "points_filtered", 1000);
   m_subOdom.subscribe(m_nodeHandle, "odom", 100);
   
   m_pubMap = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("map", 100);
@@ -92,7 +92,8 @@ void LidarMappingNode::generateMap(
       odom->pose.pose.position.z));
 
   m_lidarMapping.updateCurrentPointsToMap(pointcloud_in, current_pose);
-  pcl::PointCloud<pcl::PointXYZL>::Ptr pc_map = m_lidarMapping.getMap();
+  pcl::PointCloud<pcl::PointXYZL>::Ptr pc_map(new pcl::PointCloud<pcl::PointXYZL>());
+  pc_map = m_lidarMapping.getMap();
   sensor_msgs::PointCloud2 PointsMsg;
   pcl::toROSMsg(*pc_map, PointsMsg);
   PointsMsg.header.stamp = pointcloud_time;

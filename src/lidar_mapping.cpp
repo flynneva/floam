@@ -50,7 +50,8 @@ void LidarMapping::addWidthCellNegative(void)
 	for(int j=0; j < map_height;j++){
 		std::vector<pcl::PointCloud<pcl::PointXYZL>::Ptr> map_depth_temp;
 		for(int k=0;k< map_depth;k++){
-			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp;
+			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp(new pcl::PointCloud<pcl::PointXYZL>());
+
 			map_depth_temp.push_back(point_cloud_temp);
 		}
 		map_height_temp.push_back(map_depth_temp);
@@ -64,10 +65,13 @@ void LidarMapping::addWidthCellNegative(void)
 void LidarMapping::addWidthCellPositive(void)
 {
 	std::vector<std::vector<pcl::PointCloud<pcl::PointXYZL>::Ptr>> map_height_temp;
+
 	for(int j=0; j < map_height;j++){
 		std::vector<pcl::PointCloud<pcl::PointXYZL>::Ptr> map_depth_temp;
+
 		for(int k=0;k< map_depth;k++){
-			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp;
+			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp(new pcl::PointCloud<pcl::PointXYZL>());
+
 			map_depth_temp.push_back(point_cloud_temp);
 		}
 		map_height_temp.push_back(map_depth_temp);
@@ -79,8 +83,10 @@ void LidarMapping::addHeightCellNegative(void)
 {
 	for(int i=0; i < map_width;i++){
 		std::vector<pcl::PointCloud<pcl::PointXYZL>::Ptr> map_depth_temp;
+
 		for(int k=0;k<map_depth;k++){
-			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp;
+			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp(new pcl::PointCloud<pcl::PointXYZL>());
+
 			map_depth_temp.push_back(point_cloud_temp);
 		}
 		map[i].insert(map[i].begin(), map_depth_temp);
@@ -92,8 +98,10 @@ void LidarMapping::addHeightCellPositive(void)
 {
 	for(int i=0; i < map_width;i++){
 		std::vector<pcl::PointCloud<pcl::PointXYZL>::Ptr> map_depth_temp;
+
 		for(int k=0;k<map_depth;k++){
-			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp;
+			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp(new pcl::PointCloud<pcl::PointXYZL>());
+
 			map_depth_temp.push_back(point_cloud_temp);
 		}
 		map[i].push_back(map_depth_temp);
@@ -104,7 +112,7 @@ void LidarMapping::addDepthCellNegative(void)
 {
 	for(int i=0; i < map_width;i++){
 		for(int j=0;j< map_height;j++){
-			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp;
+			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp(new pcl::PointCloud<pcl::PointXYZL>());
 			map[i][j].insert(map[i][j].begin(), point_cloud_temp);
 		}
 	}
@@ -115,7 +123,7 @@ void LidarMapping::addDepthCellPositive(void)
 {
 	for(int i=0; i < map_width;i++){
 		for(int j=0;j< map_height;j++){
-			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp;
+			pcl::PointCloud<pcl::PointXYZL>::Ptr point_cloud_temp(new pcl::PointCloud<pcl::PointXYZL>());
 			map[i][j].push_back(point_cloud_temp);
 		}
 	}
@@ -205,7 +213,7 @@ void LidarMapping::updateCurrentPointsToMap(const pcl::PointCloud<pcl::PointXYZL
 
 pcl::PointCloud<pcl::PointXYZL>::Ptr LidarMapping::getMap(void)
 {
-	pcl::PointCloud<pcl::PointXYZL>::Ptr LidarCloudMap = pcl::PointCloud<pcl::PointXYZL>::Ptr(new  pcl::PointCloud<pcl::PointXYZL>());
+	pcl::PointCloud<pcl::PointXYZL>::Ptr LidarCloudMap(new  pcl::PointCloud<pcl::PointXYZL>());
 	for (int i = 0; i < map_width; i++) {
 		for (int j = 0; j < map_height; j++) {
 			for (int k = 0; k < map_depth; k++) {

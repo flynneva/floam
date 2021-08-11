@@ -56,6 +56,7 @@ public:
   Scanner();
   ~Scanner();
   int lines{0};
+  int skipPoints{50};
   double period{0.0};
   double scan_rate{0.0};
   Settings common;

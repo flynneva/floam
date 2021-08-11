@@ -40,6 +40,7 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
   // TODO(flynneva): make these parameters?
   // number of nearest neighbors to search for
   int kNN = 10;
+  int increment = m_settings.skipPoints;
   std::vector<int> pointIdxRadiusSearch;
   std::vector<float> pointRadiusSquaredDistance;
 
@@ -50,7 +51,7 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
   int index = 0;
   // separate out pointcloud into different scan lines
   // essentially trying to make it an "ordered pointcloud"
-  for (int i = 0; i < (int) points->points.size(); i++)
+  for (int i = 0; i < (int) points->points.size(); i+=increment)
   {
     int scanID=0;
 
@@ -98,17 +99,32 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
       {
         // reset diff
         diffTotal = 0;
+	diffX = 0;
+	diffY = 0;
+	diffZ = 0;
+
         // points found within radius
         for(std::size_t j = 0; j < pointIdxRadiusSearch.size(); ++j) {
-          // sum up squared distances
-          diffTotal += pointRadiusSquaredDistance[j];
+          diffX += (*points)[pointIdxRadiusSearch[j]].x;
+	  diffY += (*points)[pointIdxRadiusSearch[j]].y;
+	  diffZ += (*points)[pointIdxRadiusSearch[j]].z;
         }
+
+	/// subtract actual point * num points found
+	diffX = diffX - ((int)pointIdxRadiusSearch.size() * points->points[i].x);
+	diffY = diffY - ((int)pointIdxRadiusSearch.size() * points->points[i].y);
+	diffZ = diffZ - ((int)pointIdxRadiusSearch.size() * points->points[i].z);
+
+	/// calculate diff
+	diffTotal = diffX * diffX + diffY * diffY + diffZ * diffZ;
+
         // get current point
         pcl::PointXYZL tempPointL;
         tempPointL.x = points->points[i].x;
         tempPointL.y = points->points[i].y;
         tempPointL.z = points->points[i].z;
-        if (diffTotal <= m_settings.common.limits.edgeThreshold) {
+        
+	if (diffTotal <= m_settings.common.limits.edgeThreshold) {
           // value is smaller than threshold, so assume it is a surface
           tempPointL.label = 0;
         } else {
@@ -241,7 +257,7 @@ void Lidar<floam::lidar::Imager>::detectEdges(
 {
   // pointcloud in has to be organized (i.e. height and width)
   pcl::OrganizedEdgeBase <pcl::PointXYZ, pcl::Label> edgeDetector;
-  pcl::PointCloud<pcl::Label>::Ptr labels;
+  pcl::PointCloud<pcl::Label>::Ptr labels(new pcl::PointCloud<pcl::Label> ());
 
   std::vector<pcl::PointIndices> indicies;
   edgeDetector.setInputCloud(points);
@@ -264,7 +280,7 @@ void Lidar<floam::lidar::Scanner>::detectSurfaces(
 {
   // Create the normal estimation class, and pass the input pointcloud to it
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normalDetector;
-  pcl::PointCloud<pcl::Normal> normalCloud;
+  pcl::PointCloud<pcl::Normal>::Ptr normalCloud(new pcl::PointCloud<pcl::Normal> ());
   normalDetector.setInputCloud(points);
 
   // Create an empty kdtree representation, and pass it to the normal estimation object.
@@ -275,9 +291,9 @@ void Lidar<floam::lidar::Scanner>::detectSurfaces(
   normalDetector.setRadiusSearch (0.03);
 
   // Compute the features
-  normalDetector.compute(normalCloud);
+  normalDetector.compute(*normalCloud);
   // combine xyz cloud with normals
-  pcl::concatenateFields(*points, normalCloud, *normals);
+  pcl::concatenateFields(*points, *normalCloud, *normals);
 }
 
 /// overloaded for Imager type

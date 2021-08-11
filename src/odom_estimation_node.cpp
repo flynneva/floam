@@ -61,8 +61,8 @@ void OdomEstimationNode::onInit()
   m_tfGlobal->child_frame_id = m_frameId;
 
   // should these topic names be parameters instead of remapped?
-  m_subEdges.subscribe(m_nodeHandle, "points_edge", 100);
-  m_subSurfaces.subscribe(m_nodeHandle, "points_surface", 100);
+  m_subEdges.subscribe(m_nodeHandle, "points_edge", 1000);
+  m_subSurfaces.subscribe(m_nodeHandle, "points_surface", 1000);
  
   m_pubLidarOdometry = m_nodeHandle.advertise<nav_msgs::Odometry>("odom", 100);
   
