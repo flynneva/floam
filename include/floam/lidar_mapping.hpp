@@ -25,14 +25,14 @@
 #include <vector>
 
 
-#define LIDAR_CELL_WIDTH 50.0
-#define LIDAR_CELL_HEIGHT 50.0
-#define LIDAR_CELL_DEPTH 50.0
+#define CELL_WIDTH 50.0  // m
+#define CELL_HEIGHT 50.0  // m
+#define CELL_DEPTH 50.0  //  m
 
-//separate map as many sub point clouds
-
-#define LIDAR_CELL_RANGE_HORIZONTAL 2
-#define LIDAR_CELL_RANGE_VERTICAL 2
+#define CELL_RANGE_HORIZONTAL 4
+#define CELL_RANGE_VERTICAL 4
+#define HALF_CELL_RANGE_HORIZONTAL CELL_RANGE_HORIZONTAL / 2
+#define HALF_CELL_RANGE_VERTICAL CELL_RANGE_VERTICAL / 2
 
 
 namespace floam
@@ -42,32 +42,29 @@ namespace lidar
 
 class LidarMapping 
 {
+public:
+  LidarMapping();
+  void init(double map_resolution);
+  void updateCurrentPointsToMap(
+    const pcl::PointCloud<pcl::PointXYZL>::Ptr & pc_in,
+    const Eigen::Isometry3d & pose_current);
+  pcl::PointCloud<pcl::PointXYZL>::Ptr getMap(void);
 
-    public:
-    	LidarMapping();
-		void init(double map_resolution);
-		void updateCurrentPointsToMap(const pcl::PointCloud<pcl::PointXYZL>::Ptr& pc_in, const Eigen::Isometry3d& pose_current);
-		pcl::PointCloud<pcl::PointXYZL>::Ptr getMap(void);
-
-	private:
-		int origin_in_map_x;
-		int origin_in_map_y;
-		int origin_in_map_z;
-		int map_width;
-		int map_height;
-		int map_depth;
-		std::vector<std::vector<std::vector<pcl::PointCloud<pcl::PointXYZL>::Ptr>>> map;
-		pcl::VoxelGrid<pcl::PointXYZL> downSizeFilter;
-		
-		void addWidthCellNegative(void);
-		void addWidthCellPositive(void);
-		void addHeightCellNegative(void);
-		void addHeightCellPositive(void);
-		void addDepthCellNegative(void);
-		void addDepthCellPositive(void);
-		void checkPoints(int& x, int& y, int& z);
-
+private:
+  int m_originInMapX, m_originInMapY, m_originInMapZ;
+  int m_mapWidth, m_mapHeight, m_mapDepth;
+  std::vector<std::vector<std::vector<pcl::PointCloud<pcl::PointXYZL>::Ptr>>> m_map;
+  pcl::VoxelGrid<pcl::PointXYZL> m_downSizeFilter;
+  
+  void addWidthCellNegative(void);
+  void addWidthCellPositive(void);
+  void addHeightCellNegative(void);
+  void addHeightCellPositive(void);
+  void addDepthCellNegative(void);
+  void addDepthCellPositive(void);
+  void checkPoints(int & x, int & y, int & z);
 };
+
 }  // namespace lidar
 }  // namespace floam
 

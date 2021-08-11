@@ -98,14 +98,17 @@ public:
 	ceres::Problem & problem,
 	ceres::LossFunction * lossFunction);
 
+  // TODO(flynneva): are these even used? I think these were moved to the mapping class
   void addPointsToMap(
 	const pcl::PointCloud<pcl::PointXYZ>::Ptr & downsampledEdgeCloud,
 	const pcl::PointCloud<pcl::PointXYZ>::Ptr & downsampledSurfCloud);
 
+  // TODO(flynneva): are these even used? I think these were moved to the mapping class
   void pointAssociateToMap(
 	pcl::PointXYZ const * const pointsIn,
 	pcl::PointXYZ * const pointsOut);
 
+  // TODO(flynneva): are these even used? I think these were moved to the mapping class
   void downSamplingToMap(
 	const pcl::PointCloud<pcl::PointXYZ>::Ptr & edgesIn,
 	pcl::PointCloud<pcl::PointXYZ>::Ptr & edgesOut,
