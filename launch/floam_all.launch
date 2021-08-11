@@ -29,6 +29,7 @@
     <!-- scanning lidar args -->
     <arg name="scan_lines" default="1" />
     <arg name="skip_points" default="75" />
+    <arg name="search_radius" default="0.25" />
     <arg name="period" default="0.2" />
 
     <!-- imaging lidar args -->

@@ -37,9 +37,10 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
   pcl::KdTreeFLANN<pcl::PointXYZ> kdTree;
   kdTree.setInputCloud(points);
 
-  // TODO(flynneva): make these parameters?
-  // number of nearest neighbors to search for
-  int kNN = 10;
+  // radius around point to search for other points
+  double radius = m_settings.searchRadius;
+  /// TODO(flynneva): use downsampling technique instead of just skipping points?
+  /// number of points to skip
   int increment = m_settings.skipPoints;
   std::vector<int> pointIdxRadiusSearch;
   std::vector<float> pointRadiusSquaredDistance;
@@ -93,30 +94,40 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
     } else {
       // assume single scan, use kdTree to do nearest K neighbor search
       if(
-        kdTree.nearestKSearch(
-          points->points[i], kNN, pointIdxRadiusSearch,
+        kdTree.radiusSearch(
+          points->points[i], radius, pointIdxRadiusSearch,
           pointRadiusSquaredDistance) > 0)
       {
+
+        // TODO(flynneva): this should be its own function, used multiple times within code
+        // classifyPoint()
         // reset diff
         diffTotal = 0;
-	diffX = 0;
-	diffY = 0;
-	diffZ = 0;
+        diffX = 0;
+        diffY = 0;
+        diffZ = 0;
 
         // points found within radius
+        std::cout << "=================" << std::endl;
+        std::cout << "points found: " << pointIdxRadiusSearch.size() << std::endl;
         for(std::size_t j = 0; j < pointIdxRadiusSearch.size(); ++j) {
           diffX += (*points)[pointIdxRadiusSearch[j]].x;
-	  diffY += (*points)[pointIdxRadiusSearch[j]].y;
-	  diffZ += (*points)[pointIdxRadiusSearch[j]].z;
+          diffY += (*points)[pointIdxRadiusSearch[j]].y;
+          diffZ += (*points)[pointIdxRadiusSearch[j]].z;
         }
 
-	/// subtract actual point * num points found
-	diffX = diffX - ((int)pointIdxRadiusSearch.size() * points->points[i].x);
-	diffY = diffY - ((int)pointIdxRadiusSearch.size() * points->points[i].y);
-	diffZ = diffZ - ((int)pointIdxRadiusSearch.size() * points->points[i].z);
+        /// subtract actual point * num points found
+        diffX = diffX - ((int)pointIdxRadiusSearch.size() * points->points[i].x);
+        diffY = diffY - ((int)pointIdxRadiusSearch.size() * points->points[i].y);
+        diffZ = diffZ - ((int)pointIdxRadiusSearch.size() * points->points[i].z);
 
-	/// calculate diff
-	diffTotal = diffX * diffX + diffY * diffY + diffZ * diffZ;
+        std::cout << "diffX: " << diffX << std::endl;
+        std::cout << "diffY: " << diffY << std::endl;
+        std::cout << "diffZ: " << diffZ << std::endl;
+        /// calculate diff
+        diffTotal = diffX * diffX + diffY * diffY + diffZ * diffZ;
+
+        std::cout << "diffTotal: " << diffTotal << std::endl;
 
         // get current point
         pcl::PointXYZL tempPointL;
@@ -124,13 +135,16 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
         tempPointL.y = points->points[i].y;
         tempPointL.z = points->points[i].z;
         
-	if (diffTotal <= m_settings.common.limits.edgeThreshold) {
+        if (diffTotal <= m_settings.common.limits.edgeThreshold) {
           // value is smaller than threshold, so assume it is a surface
           tempPointL.label = 0;
         } else {
           // value is larger than threshold, assume it is an edge
           tempPointL.label = 1;
         }
+
+        /// end function
+
         edges->push_back(tempPointL);
         continue;
       }
