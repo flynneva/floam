@@ -13,6 +13,7 @@
     <arg name="edge_threshold" default="0.05" />
     <arg name="scan_lines" default="64" />
     <arg name="skip_points" default="50" />
+    <arg name="search_k" default="10" />
     <arg name="search_radius" default="0.25" />
 
     <!-- Node Manager Arguments -->
@@ -33,6 +34,7 @@
         <param name="frame_id" value="$(arg frame_id)" />
         <param name="scan_lines" value="$(arg scan_lines)" />
         <param name="skip_points" value="$(arg skip_points)" />
+        <param name="search_k" value="$(arg search_k)" />
         <param name="search_radius" value="$(arg search_radius)" />
 
         <param name="edge_threshold" value="$(arg edge_threshold)" />

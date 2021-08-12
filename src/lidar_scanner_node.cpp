@@ -64,7 +64,8 @@ void ScanningLidarNode::onInit()
     double max_dis = 60.0;
     double min_dis = 2.0;
     double edgeThreshold = 0.05;
-    int skipPoints = 0.05;
+    int skipPoints = 25;
+    int searchK = 10;
     double searchRadius = 0.25;
 
     m_nodeHandle.getParam("points_topic", points_topic);
@@ -77,11 +78,13 @@ void ScanningLidarNode::onInit()
     m_nodeHandle.getParam("edge_threshold", edgeThreshold);
     m_nodeHandle.getParam("skip_points", skipPoints);
     m_nodeHandle.getParam("search_radius", searchRadius);
+    m_nodeHandle.getParam("search_k", searchK);
     m_nodeHandle.getParam("frame_id", frameId);
 
     m_lidar.m_settings.period = scan_period;
     m_lidar.m_settings.lines = scan_lines;
     m_lidar.m_settings.skipPoints = skipPoints;
+    m_lidar.m_settings.searchK = searchK;
     m_lidar.m_settings.searchRadius = searchRadius;
     m_lidar.m_settings.common.frameId = frameId;
     m_lidar.m_settings.common.limits.edgeThreshold = edgeThreshold;

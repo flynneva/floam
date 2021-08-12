@@ -37,17 +37,24 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
   pcl::KdTreeFLANN<pcl::PointXYZ> kdTree;
   kdTree.setInputCloud(points);
 
-  // radius around point to search for other points
+  // k points around point to search for
+  int kNN = m_settings.searchK;
+  // radius around point to search for points
   double radius = m_settings.searchRadius;
+
   /// TODO(flynneva): use downsampling technique instead of just skipping points?
   /// number of points to skip
   int increment = m_settings.skipPoints;
-  std::vector<int> pointIdxRadiusSearch;
-  std::vector<float> pointRadiusSquaredDistance;
+  std::vector<int> pointSearch;
+  std::vector<float> pointSquaredDistance;
 
   double diffX, diffY, diffZ = 0;
   double diffTotal, diffLeft, diffRight = 0;
   double tempX, tempY, tempZ = 0;
+
+  // covariance matrix
+  Eigen::Matrix<std::complex<double>, 3, 3> covariance;
+  Eigen::Matrix<std::complex<double>, 3, 1> eigenValues;
 
   int index = 0;
   // separate out pointcloud into different scan lines
@@ -92,42 +99,53 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
         continue;
       }
     } else {
-      // assume single scan, use kdTree to do nearest K neighbor search
+      // assume single scan, use kdTree to do either radius search or nearest K search
+      // TODO(flynneva): add option to do k nearest search as well
       if(
         kdTree.radiusSearch(
-          points->points[i], radius, pointIdxRadiusSearch,
-          pointRadiusSquaredDistance) > 0)
+          points->points[i], radius, pointSearch,
+          pointSquaredDistance) > 0)
       {
-
         // TODO(flynneva): this should be its own function, used multiple times within code
         // classifyPoint()
-        // reset diff
+        // reset covariance
         diffTotal = 0;
         diffX = 0;
         diffY = 0;
         diffZ = 0;
 
-        // points found within radius
-        std::cout << "=================" << std::endl;
-        std::cout << "points found: " << pointIdxRadiusSearch.size() << std::endl;
-        for(std::size_t j = 0; j < pointIdxRadiusSearch.size(); ++j) {
-          diffX += (*points)[pointIdxRadiusSearch[j]].x;
-          diffY += (*points)[pointIdxRadiusSearch[j]].y;
-          diffZ += (*points)[pointIdxRadiusSearch[j]].z;
+        // reset covariance values
+        covariance.setZero(3, 3);
+
+        // points found within K
+        for(std::size_t j = 0; j < pointSearch.size(); ++j) {
+          // calculate diff to current point
+          diffX = (*points)[pointSearch[j]].x - points->points[i].x;
+          diffY = (*points)[pointSearch[j]].y - points->points[i].y;
+          diffZ = (*points)[pointSearch[j]].z - points->points[i].z;
+
+          // sum up diffs, store in covariance matrix for later
+          covariance(0, 0) += diffX * diffX;
+          covariance(1, 0) += diffX * diffY;
+          covariance(2, 0) += diffX * diffZ;
+          covariance(0, 1) += covariance(1, 0);  // same as cov(x, y)
+          covariance(1, 1) += diffY * diffY;
+          covariance(2, 1) += diffY * diffZ;
+          covariance(0, 2) += covariance(2, 0);  // same as cov(x, z)
+          covariance(1, 2) += covariance(2, 1);  // same as cov(z, y)
+          covariance(2, 2) += diffZ * diffZ;
         }
 
-        /// subtract actual point * num points found
-        diffX = diffX - ((int)pointIdxRadiusSearch.size() * points->points[i].x);
-        diffY = diffY - ((int)pointIdxRadiusSearch.size() * points->points[i].y);
-        diffZ = diffZ - ((int)pointIdxRadiusSearch.size() * points->points[i].z);
+        /// number of neighbor points found - 1
+        index = (int)pointSearch.size() - 1;
 
-        std::cout << "diffX: " << diffX << std::endl;
-        std::cout << "diffY: " << diffY << std::endl;
-        std::cout << "diffZ: " << diffZ << std::endl;
-        /// calculate diff
-        diffTotal = diffX * diffX + diffY * diffY + diffZ * diffZ;
+        /// divide matrix by number of points - 1
+        covariance = covariance / index;
 
-        std::cout << "diffTotal: " << diffTotal << std::endl;
+        /// calculate surface variation
+        auto solver(covariance);
+        eigenValues = solver.eigenvalues();
+        diffTotal = std::real(eigenValues(0) / (eigenValues(0) + eigenValues(1) + eigenValues(2)));
 
         // get current point
         pcl::PointXYZL tempPointL;
@@ -135,7 +153,9 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
         tempPointL.y = points->points[i].y;
         tempPointL.z = points->points[i].z;
         
-        if (diffTotal <= m_settings.common.limits.edgeThreshold) {
+        if (diffTotal <= m_settings.common.limits.edgeThreshold &&
+            diffTotal >= -m_settings.common.limits.edgeThreshold)
+        {
           // value is smaller than threshold, so assume it is a surface
           tempPointL.label = 0;
         } else {
@@ -146,6 +166,15 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
         /// end function
 
         edges->push_back(tempPointL);
+
+        // also add all "found" points to cloud, classify same as point above
+        // for(std::size_t j = 0; j < pointSearch.size(); ++j) {
+          // tempPointL.x = (*points)[pointSearch[j]].x;
+          // tempPointL.y = (*points)[pointSearch[j]].y;
+          // tempPointL.z = (*points)[pointSearch[j]].z;
+
+          // edges->push_back(tempPointL);
+        // }
         continue;
       }
     }
@@ -181,6 +210,8 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
     m_settings.common.limits.sectors = 6;
     int sectorSize = (int)lidarScans[i]->points.size() / m_settings.common.limits.sectors;
 
+    double diffX, diffY, diffZ;
+  
     for(int j = halfWindow; j < (int)(lidarScans[i]->points.size() - halfWindow); j += 1) {
       // reset diff's at new point
       diffX = 0;
@@ -219,7 +250,6 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
     }
     /// end of potential cloudCurvature func
 
-    double halfThreshold = m_settings.common.limits.edgeThreshold / 2;
     /// loop over sectors
     for(int j = 0; j < m_settings.common.limits.sectors; j++) {
       int sectorStart = sectorSize * j;
@@ -301,8 +331,8 @@ void Lidar<floam::lidar::Scanner>::detectSurfaces(
   // Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ> ());
   normalDetector.setSearchMethod (tree);
-  // Use all neighbors in a sphere of radius 3cm
-  normalDetector.setRadiusSearch (0.03);
+  // Use all neighbors in a sphere of K 3cm
+  normalDetector.setKSearch (0.03);
 
   // Compute the features
   normalDetector.compute(*normalCloud);

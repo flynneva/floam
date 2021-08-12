@@ -57,6 +57,7 @@ public:
   ~Scanner();
   int lines{0};
   int skipPoints{50};
+  int searchK{10};
   double searchRadius{0.25};
   double period{0.0};
   double scan_rate{0.0};

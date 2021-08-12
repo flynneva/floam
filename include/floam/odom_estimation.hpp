@@ -35,8 +35,6 @@
 //LOCAL LIB
 #include "floam/lidar_optimization.hpp"
 
-#include <ros/ros.h>
-
 namespace floam
 {
 namespace odom
