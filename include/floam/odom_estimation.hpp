@@ -34,6 +34,7 @@
 
 //LOCAL LIB
 #include "floam/lidar_optimization.hpp"
+#include "floam/lidar_utils.hpp"
 
 namespace floam
 {
@@ -51,9 +52,9 @@ public:
   OdomEstimation();
   ~OdomEstimation() {};
 
-  void init(double mapResolution);	
-  void initMapWithPoints(const pcl::PointCloud<pcl::PointXYZ>::Ptr & edges, const pcl::PointCloud<pcl::PointXYZ>::Ptr& surfaces);
-  void updatePointsToMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr & edges, const pcl::PointCloud<pcl::PointXYZ>::Ptr& surfaces);
+  void init(const double & mapResolution);	
+  void initMapWithPoints(const pcl::PointCloud<pcl::PointXYZ>::Ptr & edges, const pcl::PointCloud<pcl::PointXYZ>::Ptr & surfaces);
+  void updatePointsToMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr & edges, const pcl::PointCloud<pcl::PointXYZ>::Ptr & surfaces);
   void getMap(pcl::PointCloud<pcl::PointXYZ>::Ptr & lidarCloudMap);
 
   /// Odometry
@@ -83,35 +84,38 @@ public:
   /// optimization count 
   int m_optimizationCount;
 
+  /// totals counters (frames, time)
+  floam::lidar::Total m_totals;
+
   /// function
   void addEdgeCostFactor(
-	const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
-	const pcl::PointCloud<pcl::PointXYZ>::Ptr & map,
-	ceres::Problem & problem,
-	ceres::LossFunction * lossFunction);
+	  const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
+	  const pcl::PointCloud<pcl::PointXYZ>::Ptr & map,
+	  ceres::Problem & problem,
+	  ceres::LossFunction * lossFunction);
 
   void addSurfCostFactor(
-	const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
-	const pcl::PointCloud<pcl::PointXYZ>::Ptr & map,
-	ceres::Problem & problem,
-	ceres::LossFunction * lossFunction);
+	  const pcl::PointCloud<pcl::PointXYZ>::Ptr & points,
+	  const pcl::PointCloud<pcl::PointXYZ>::Ptr & map,
+	  ceres::Problem & problem,
+	  ceres::LossFunction * lossFunction);
 
   // TODO(flynneva): are these even used? I think these were moved to the mapping class
   void addPointsToMap(
-	const pcl::PointCloud<pcl::PointXYZ>::Ptr & downsampledEdgeCloud,
-	const pcl::PointCloud<pcl::PointXYZ>::Ptr & downsampledSurfCloud);
+	  const pcl::PointCloud<pcl::PointXYZ>::Ptr & downsampledEdgeCloud,
+	  const pcl::PointCloud<pcl::PointXYZ>::Ptr & downsampledSurfCloud);
 
   // TODO(flynneva): are these even used? I think these were moved to the mapping class
   void pointAssociateToMap(
-	pcl::PointXYZ const * const pointsIn,
-	pcl::PointXYZ * const pointsOut);
+	  const std::shared_ptr<pcl::PointXYZ> & pointsIn,
+	  std::shared_ptr<pcl::PointXYZ> & pointsOut);
 
   // TODO(flynneva): are these even used? I think these were moved to the mapping class
   void downSamplingToMap(
-	const pcl::PointCloud<pcl::PointXYZ>::Ptr & edgesIn,
-	pcl::PointCloud<pcl::PointXYZ>::Ptr & edgesOut,
-	const pcl::PointCloud<pcl::PointXYZ>::Ptr & surfacesIn,
-	pcl::PointCloud<pcl::PointXYZ>::Ptr & surfacesOut);
+	  const pcl::PointCloud<pcl::PointXYZ>::Ptr & edgesIn,
+	  pcl::PointCloud<pcl::PointXYZ>::Ptr & edgesOut,
+	  const pcl::PointCloud<pcl::PointXYZ>::Ptr & surfacesIn,
+	  pcl::PointCloud<pcl::PointXYZ>::Ptr & surfacesOut);
 };
 }  // namespace odom
 }  // namespace floam

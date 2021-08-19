@@ -61,8 +61,8 @@ void OdomEstimationNode::onInit()
   m_tfGlobal->child_frame_id = m_frameId;
 
   // should these topic names be parameters instead of remapped?
-  m_subEdges.subscribe(m_nodeHandle, "points_edge", 1000);
-  m_subSurfaces.subscribe(m_nodeHandle, "points_surface", 1000);
+  m_subEdges.subscribe(m_nodeHandle, "points_edge", 100);
+  m_subSurfaces.subscribe(m_nodeHandle, "points_surface", 100);
  
   m_pubLidarOdometry = m_nodeHandle.advertise<nav_msgs::Odometry>("odom", 100);
   
@@ -95,20 +95,20 @@ void OdomEstimationNode::handleClouds(
 
   // check if odometry is initialized
   if (m_isInitialized == false) {
-      m_odomEstimation.initMapWithPoints(pointcloud_edge_in, pointcloud_surf_in);
-      m_isInitialized = true;
-      ROS_INFO("odometry initialized");  // should only be called once
+    m_odomEstimation.initMapWithPoints(pointcloud_edge_in, pointcloud_surf_in);
+    m_isInitialized = true;
+    ROS_INFO("odometry initialized");  // should only be called once
   } else {
-      std::chrono::time_point<std::chrono::system_clock> start, end;
-      start = std::chrono::system_clock::now();
-      m_odomEstimation.updatePointsToMap(pointcloud_edge_in, pointcloud_surf_in);
-      end = std::chrono::system_clock::now();
-      // calculate elapsted time
-      std::chrono::duration<float> elapsed_seconds = end - start;
-      m_totals.frames++;
-      float time_temp = elapsed_seconds.count() * 1000;
-      m_totals.time += time_temp;
-      ROS_INFO("average odom estimation time %f ms", m_totals.time / m_totals.frames);
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+    start = std::chrono::system_clock::now();
+    m_odomEstimation.updatePointsToMap(pointcloud_edge_in, pointcloud_surf_in);
+    end = std::chrono::system_clock::now();
+    // calculate elapsted time
+    std::chrono::duration<float> elapsed_seconds = end - start;
+    m_totals.frames++;
+    float time_temp = elapsed_seconds.count() * 1000;
+    m_totals.time += time_temp;
+    ROS_INFO("average odom estimation time %f ms", m_totals.time / m_totals.frames);
   }
 
   /// get current odometry estimation

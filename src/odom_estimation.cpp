@@ -8,6 +8,8 @@
 #include "floam/lidar_optimization.hpp"
 #include "floam/odom_estimation.hpp"
 
+#include <iostream>
+
 namespace floam
 {
 namespace odom
@@ -18,7 +20,7 @@ OdomEstimation::OdomEstimation()
   // constructor
 }
 
-void OdomEstimation::init(double mapResolution) {
+void OdomEstimation::init(const double & mapResolution) {
   //init local map
   m_lidarCloudCornerMap = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
   m_lidarCloudSurfMap = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
@@ -42,7 +44,7 @@ void OdomEstimation::initMapWithPoints(
   *m_lidarCloudCornerMap += *edges;
   *m_lidarCloudSurfMap += *surfaces;
   /// TODO(flynneva): make this a parameter
-  m_optimizationCount = 12;
+  m_optimizationCount = 6;
 }
 
 
@@ -67,17 +69,17 @@ void OdomEstimation::updatePointsToMap(
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr downsampledEdgeCloud(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::PointCloud<pcl::PointXYZ>::Ptr downsampledSurfCloud(new pcl::PointCloud<pcl::PointXYZ>());
-  
+
   /// generate map from edges and surfaces
   downSamplingToMap(edges, downsampledEdgeCloud, surfaces, downsampledSurfCloud);
-  
+
   // TODO(flynneva): make these limits parameters?
   if (m_lidarCloudCornerMap->points.size() > 10 &&
       m_lidarCloudSurfMap->points.size() > 50)
   {
     m_kdTreeEdgeMap->setInputCloud(m_lidarCloudCornerMap);
     m_kdTreeSurfMap->setInputCloud(m_lidarCloudSurfMap);
-
+    
     for (int optCount = 0; optCount < m_optimizationCount; optCount++) {
       ceres::LossFunction *loss_function = new ceres::HuberLoss(0.1);
     
@@ -89,7 +91,7 @@ void OdomEstimation::updatePointsToMap(
       addSurfCostFactor(downsampledSurfCloud, m_lidarCloudSurfMap, problem, loss_function);
       ceres::Solver::Options options;
       /// TODO(flynneva): make these parameters
-      options.linear_solver_type = ceres::DENSE_QR;
+      options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
       options.max_num_iterations = 4;
       options.minimizer_progress_to_stdout = false;
       options.check_gradients = false;
@@ -112,8 +114,8 @@ void OdomEstimation::updatePointsToMap(
 }
 
 void OdomEstimation::pointAssociateToMap(
-  pcl::PointXYZ const *const pointIn,
-  pcl::PointXYZ *const pointOut)
+  const std::shared_ptr<pcl::PointXYZ> & pointIn,
+  std::shared_ptr<pcl::PointXYZ> & pointOut)
 {
   Eigen::Vector3d pointCurrent(pointIn->x, pointIn->y, pointIn->z);
   Eigen::Vector3d point_w = m_currentRotation * pointCurrent + m_currentTranslation;
@@ -142,17 +144,20 @@ void OdomEstimation::addEdgeCostFactor(
   ceres::LossFunction *loss_function)
 {
   int corner_num=0;
+  auto pointTemp = std::make_shared<pcl::PointXYZ>();
+  auto pointToAdd = std::make_shared<pcl::PointXYZ>();
   for (int i = 0; i < (int)points->points.size(); i++)
   {
-    pcl::PointXYZ point_temp;
-    pointAssociateToMap(&(points->points[i]), &point_temp);
+    pointTemp.reset(new pcl::PointXYZ());
+    pointToAdd.reset(new pcl::PointXYZ(points->points[i]));
+    pointAssociateToMap(pointToAdd, pointTemp);
 
     // nearest k neighbors search
     const int k = 5;
     std::vector<int> pointSearchInd(k);
     std::vector<float> pointSearchSqDis(k);
 
-    if (m_kdTreeEdgeMap->nearestKSearch(point_temp, k, pointSearchInd, pointSearchSqDis) > 0) {
+    if (m_kdTreeEdgeMap->nearestKSearch(*pointTemp, k, pointSearchInd, pointSearchSqDis) > 0) {
       // check if last nearest point is within 1.0m sq away
       if (pointSearchSqDis[k - 1] < 1.0)
       {
@@ -196,7 +201,6 @@ void OdomEstimation::addEdgeCostFactor(
       }
     }
   }
-  
 
   if(corner_num < 20){
     printf("not enough correct corner points: %i\n", corner_num);
@@ -212,14 +216,18 @@ void OdomEstimation::addSurfCostFactor(
 {
   int surf_num=0;
   const int k = 5;
+  auto pointTemp = std::make_shared<pcl::PointXYZ>();
+  auto pointToAdd = std::make_shared<pcl::PointXYZ>();
   for (int i = 0; i < (int)points->points.size(); i++)
   {
-    pcl::PointXYZ point_temp;
-    pointAssociateToMap(&(points->points[i]), &point_temp);
+    pointTemp.reset(new pcl::PointXYZ());
+    pointToAdd.reset(new pcl::PointXYZ(points->points[i]));
+    pointAssociateToMap(pointToAdd, pointTemp);
+
     std::vector<int> pointSearchInd;
     std::vector<float> pointSearchSqDis;
     // check if last nearest point is within 1.0m sq away
-    if (m_kdTreeSurfMap->nearestKSearch(point_temp, k, pointSearchInd, pointSearchSqDis) > 0) {
+    if (m_kdTreeSurfMap->nearestKSearch(*pointTemp, k, pointSearchInd, pointSearchSqDis) > 0) {
       if (pointSearchSqDis[k - 1] < 1.0)
       {
         Eigen::Matrix<double, k, 3> matA0;
@@ -270,16 +278,21 @@ void OdomEstimation::addPointsToMap(
   const pcl::PointCloud<pcl::PointXYZ>::Ptr & downsampledEdgeCloud,
   const pcl::PointCloud<pcl::PointXYZ>::Ptr & downsampledSurfCloud)
 {
-  for (int i = 0; i < (int)downsampledEdgeCloud->points.size(); i++) {
-    pcl::PointXYZ point_temp;
-    pointAssociateToMap(&downsampledEdgeCloud->points[i], &point_temp);
-    m_lidarCloudCornerMap->push_back(point_temp); 
+  int i = 0;
+  auto pointTemp = std::make_shared<pcl::PointXYZ>();
+  auto pointToAdd = std::make_shared<pcl::PointXYZ>();
+  for (i = 0; i < (int)downsampledEdgeCloud->points.size(); i++) {
+    pointTemp.reset(new pcl::PointXYZ());
+    pointToAdd.reset(new pcl::PointXYZ(downsampledEdgeCloud->points[i]));
+    pointAssociateToMap(pointToAdd, pointTemp);
+    m_lidarCloudCornerMap->push_back(*pointTemp.get()); 
   }
   
-  for (int i = 0; i < (int)downsampledSurfCloud->points.size(); i++) {
-    pcl::PointXYZ point_temp;
-    pointAssociateToMap(&downsampledSurfCloud->points[i], &point_temp);
-    m_lidarCloudSurfMap->push_back(point_temp);
+  for (i = 0; i < (int)downsampledSurfCloud->points.size(); i++) {
+    pointTemp.reset(new pcl::PointXYZ());
+    pointToAdd.reset(new pcl::PointXYZ(downsampledSurfCloud->points[i]));
+    pointAssociateToMap(pointToAdd, pointTemp);
+    m_lidarCloudSurfMap->push_back(*pointTemp.get());
   }
   
   double x_min = +m_currentTranslation.x() - 100;

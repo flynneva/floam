@@ -27,15 +27,21 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
   pcl::PointCloud<pcl::PointXYZL>::Ptr & edges)
 {
   int N_SCANS = m_settings.lines;
-  std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> lidarScans;
 
-  for(int i = 0; i < N_SCANS; i++){
-      lidarScans.push_back(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>()));
+  /// clear addedPoints
+  m_addedPoints.clear();
+
+  /// clear lidar scans
+  m_lidarScans.clear();
+
+  if(N_SCANS != 1) {
+    for(int i = 0; i < N_SCANS; i++){
+      m_lidarScans.push_back(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>()));
+    }
   }
 
   // initialize kdTree for nearest neighbor search
-  pcl::KdTreeFLANN<pcl::PointXYZ> kdTree;
-  kdTree.setInputCloud(points);
+  m_kdTree.setInputCloud(points);
 
   // k points around point to search for
   int kNN = m_settings.searchK;
@@ -44,17 +50,11 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
 
   /// TODO(flynneva): use downsampling technique instead of just skipping points?
   /// number of points to skip
-  int increment = m_settings.skipPoints;
-  std::vector<int> pointSearch;
-  std::vector<float> pointSquaredDistance;
+  const int increment = m_settings.skipPoints;
 
   double diffX, diffY, diffZ = 0;
   double diffTotal, diffLeft, diffRight = 0;
   double tempX, tempY, tempZ = 0;
-
-  // covariance matrix
-  Eigen::Matrix<std::complex<double>, 3, 3> covariance;
-  Eigen::Matrix<std::complex<double>, 3, 1> eigenValues;
 
   int index = 0;
   // separate out pointcloud into different scan lines
@@ -100,22 +100,23 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
       }
     } else {
       // assume single scan, use kdTree to do either radius search or nearest K search
+      // check if point has been already added
       // TODO(flynneva): add option to do k nearest search as well
       if(
-        kdTree.radiusSearch(
+        m_kdTree.radiusSearch(
           points->points[i], radius, pointSearch,
           pointSquaredDistance) > 0)
       {
         // TODO(flynneva): this should be its own function, used multiple times within code
         // classifyPoint()
-        // reset covariance
+        // reset m_covariance
         diffTotal = 0;
         diffX = 0;
         diffY = 0;
         diffZ = 0;
 
-        // reset covariance values
-        covariance.setZero(3, 3);
+        // reset m_covariance values
+        m_covariance.setZero(3, 3);
 
         // points found within K
         for(std::size_t j = 0; j < pointSearch.size(); ++j) {
@@ -124,28 +125,28 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
           diffY = (*points)[pointSearch[j]].y - points->points[i].y;
           diffZ = (*points)[pointSearch[j]].z - points->points[i].z;
 
-          // sum up diffs, store in covariance matrix for later
-          covariance(0, 0) += diffX * diffX;
-          covariance(1, 0) += diffX * diffY;
-          covariance(2, 0) += diffX * diffZ;
-          covariance(0, 1) += covariance(1, 0);  // same as cov(x, y)
-          covariance(1, 1) += diffY * diffY;
-          covariance(2, 1) += diffY * diffZ;
-          covariance(0, 2) += covariance(2, 0);  // same as cov(x, z)
-          covariance(1, 2) += covariance(2, 1);  // same as cov(z, y)
-          covariance(2, 2) += diffZ * diffZ;
+          // sum up diffs, store in m_covariance matrix for later
+          m_covariance(0, 0) += diffX * diffX;
+          m_covariance(1, 0) += diffX * diffY;
+          m_covariance(2, 0) += diffX * diffZ;
+          m_covariance(0, 1) += m_covariance(1, 0);  // same as cov(x, y)
+          m_covariance(1, 1) += diffY * diffY;
+          m_covariance(2, 1) += diffY * diffZ;
+          m_covariance(0, 2) += m_covariance(2, 0);  // same as cov(x, z)
+          m_covariance(1, 2) += m_covariance(2, 1);  // same as cov(z, y)
+          m_covariance(2, 2) += diffZ * diffZ;
         }
 
         /// number of neighbor points found - 1
         index = (int)pointSearch.size() - 1;
 
         /// divide matrix by number of points - 1
-        covariance = covariance / index;
+        m_covariance = m_covariance / index;
 
         /// calculate surface variation
-        auto solver(covariance);
-        eigenValues = solver.eigenvalues();
-        diffTotal = std::real(eigenValues(0) / (eigenValues(0) + eigenValues(1) + eigenValues(2)));
+        auto solver(m_covariance);
+        m_eigenValues = solver.eigenvalues();
+        diffTotal = std::real(m_eigenValues(0) / (m_eigenValues(0) + m_eigenValues(1) + m_eigenValues(2)));
 
         // get current point
         pcl::PointXYZL tempPointL;
@@ -162,23 +163,27 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
           // value is larger than threshold, assume it is an edge
           tempPointL.label = 1;
         }
-
         /// end function
 
+        m_addedPoints.push_back(i);
         edges->push_back(tempPointL);
 
         // also add all "found" points to cloud, classify same as point above
-        // for(std::size_t j = 0; j < pointSearch.size(); ++j) {
-          // tempPointL.x = (*points)[pointSearch[j]].x;
-          // tempPointL.y = (*points)[pointSearch[j]].y;
-          // tempPointL.z = (*points)[pointSearch[j]].z;
+        //  for(std::size_t j = 0; j < pointSearch.size(); ++j) {
+        //    // check if point has been already added
+        //    if(std::find(m_addedPoints.begin(), m_addedPoints.end(), j)==m_addedPoints.end()) {
+        //      tempPointL.x = (*points)[pointSearch[j]].x;
+        //      tempPointL.y = (*points)[pointSearch[j]].y;
+        //      tempPointL.z = (*points)[pointSearch[j]].z;
 
-          // edges->push_back(tempPointL);
-        // }
+       // //      m_addedPoints.push_back(i);
+        //      edges->push_back(tempPointL);
+        //    }
+        //  }
         continue;
       }
     }
-    lidarScans[scanID]->push_back(points->points[i]);
+    m_lidarScans[scanID]->push_back(points->points[i]);
   }
 
   // check to see if we already detected the edges
@@ -189,7 +194,7 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
   for(int i = 0; i < N_SCANS; i++) {
     /// (flynneva) why 131?
     // if pointcloud is too small, ignore it
-    if(lidarScans[i]->points.size() < 131) {
+    if(m_lidarScans[i]->points.size() < 131) {
       continue;
     }
 
@@ -203,16 +208,16 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
     int windowSize = 10;
     int halfWindow = windowSize / 2;
     // (TODO: flynneva): do we really need to subtract the windowSize from the total points?
-    int totalPoints = lidarScans[i]->points.size() - windowSize;
+    int totalPoints = m_lidarScans[i]->points.size() - windowSize;
   
     // calculate number of sectors and the length/size of each sector
     // TODO(flynneva): make sectors a parameter?
     m_settings.common.limits.sectors = 6;
-    int sectorSize = (int)lidarScans[i]->points.size() / m_settings.common.limits.sectors;
+    int sectorSize = (int)m_lidarScans[i]->points.size() / m_settings.common.limits.sectors;
 
     double diffX, diffY, diffZ;
   
-    for(int j = halfWindow; j < (int)(lidarScans[i]->points.size() - halfWindow); j += 1) {
+    for(int j = halfWindow; j < (int)(m_lidarScans[i]->points.size() - halfWindow); j += 1) {
       // reset diff's at new point
       diffX = 0;
       diffY = 0;
@@ -225,20 +230,20 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
         // the middle point of each window is the "baseline"
         if (k == 0) {
           // calculate diff for window so far (-halfWindow to 0)
-          tempX = diffX - (halfWindow * lidarScans[i]->points[j].x);
-          tempY = diffY - (halfWindow * lidarScans[i]->points[j].y);
-          tempZ = diffZ - (halfWindow * lidarScans[i]->points[j].z);
+          tempX = diffX - (halfWindow * m_lidarScans[i]->points[j].x);
+          tempY = diffY - (halfWindow * m_lidarScans[i]->points[j].y);
+          tempZ = diffZ - (halfWindow * m_lidarScans[i]->points[j].z);
           diffLeft = tempX * tempX + tempY * tempY + tempZ * tempZ;
 
           // subtract middle point * size (because we add the rest of the points)
-          diffX -= windowSize * lidarScans[i]->points[j].x;
-          diffY -= windowSize * lidarScans[i]->points[j].y;
-          diffZ -= windowSize * lidarScans[i]->points[j].z;
+          diffX -= windowSize * m_lidarScans[i]->points[j].x;
+          diffY -= windowSize * m_lidarScans[i]->points[j].y;
+          diffZ -= windowSize * m_lidarScans[i]->points[j].z;
         } else {
           // add points left and right of middle of window
-          diffX += lidarScans[i]->points[j + k].x;
-          diffY += lidarScans[i]->points[j + k].y;
-          diffZ += lidarScans[i]->points[j + k].z;
+          diffX += m_lidarScans[i]->points[j + k].x;
+          diffY += m_lidarScans[i]->points[j + k].y;
+          diffZ += m_lidarScans[i]->points[j + k].z;
         }
       }
       // if diff total is large, sector is very curved or could be an edge
@@ -256,7 +261,7 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
       int sectorEnd = sectorSize * (j + 1) - 1;
       // for last sector, sectorEnd is last point (may or may not be the same size as the rest of the sectors)
       if (j == (m_settings.common.limits.sectors - 1)) {
-        sectorEnd = totalPoints - 1; 
+        sectorEnd = totalPoints - 1;
       }
 
       std::vector<floam::lidar::Double2d> subCloudCurvature(
@@ -274,10 +279,11 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
       for (int k = subCloudCurvature.size() - 1; k >= 0; k--) {
         // get index of point
         index = subCloudCurvature[k].id;
+        // check if point has been already added
         pcl::PointXYZL tempPointL;
-        tempPointL.x = lidarScans[i]->points[index].x;
-        tempPointL.y = lidarScans[i]->points[index].y;
-        tempPointL.z = lidarScans[i]->points[index].z;
+        tempPointL.x = m_lidarScans[i]->points[index].x;
+        tempPointL.y = m_lidarScans[i]->points[index].y;
+        tempPointL.z = m_lidarScans[i]->points[index].z;
 
         // determine if point is an edge or surface
         if (subCloudCurvature[k].diffTotal <= m_settings.common.limits.edgeThreshold)
@@ -288,6 +294,7 @@ void Lidar<floam::lidar::Scanner>::detectEdges(
           tempPointL.label = 1;
         }
         edges->push_back(tempPointL);
+        m_addedPoints.push_back(index);
       }
     }
   }

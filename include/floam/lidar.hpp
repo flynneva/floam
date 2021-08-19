@@ -17,7 +17,7 @@ namespace floam
 namespace lidar
 {
 
-
+// TODO(flynneva): template the point type
 template <class T>
 class Lidar
 {
@@ -44,6 +44,20 @@ public:
   T m_settings;
   /// Total counters (i.e. frames and time)
   floam::lidar::Total m_total;
+
+  /// lidarScans
+  std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> m_lidarScans;
+  std::vector<int> m_addedPoints;
+
+  /// kdTree
+  pcl::KdTreeFLANN<pcl::PointXYZ> m_kdTree;
+  std::vector<int> pointSearch;
+  std::vector<float> pointSquaredDistance;
+
+  /// covariance objects
+  Eigen::Matrix<std::complex<double>, 3, 3> m_covariance;
+  Eigen::Matrix<std::complex<double>, 3, 1> m_eigenValues;
+
 };
 
 /// overload detectSurfaces for Scanner type

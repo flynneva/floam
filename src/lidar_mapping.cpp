@@ -18,7 +18,7 @@ LidarMapping::LidarMapping()
   // constructor
 }
 
-void LidarMapping::init(double map_resolution)
+void LidarMapping::init(const double & map_resolution)
 {
 	//init map
 	//init can have real object, but future added block does not need
@@ -168,14 +168,16 @@ void LidarMapping::checkPoints(int& x, int& y, int& z)
 }
 
 //update points to map 
-void LidarMapping::updateCurrentPointsToMap(const pcl::PointCloud<pcl::PointXYZL>::Ptr & pc_in, const Eigen::Isometry3d& pose_current)
+void LidarMapping::updateCurrentPointsToMap(
+  const pcl::PointCloud<pcl::PointXYZL>::Ptr & pc_in,
+  const Eigen::Isometry3d & pose_current)
 {
 	int currentPosIdX = int(std::floor(pose_current.translation().x() / CELL_WIDTH + 0.5)) + m_originInMapX;
 	int currentPosIdY = int(std::floor(pose_current.translation().y() / CELL_HEIGHT + 0.5)) + m_originInMapY;
 	int currentPosIdZ = int(std::floor(pose_current.translation().z() / CELL_DEPTH + 0.5)) + m_originInMapZ;
 
 	//check is submap is null
-	checkPoints(currentPosIdX,currentPosIdY,currentPosIdZ);
+	checkPoints(currentPosIdX, currentPosIdY, currentPosIdZ);
 
 	pcl::PointCloud<pcl::PointXYZL>::Ptr transformed_pc(new pcl::PointCloud<pcl::PointXYZL>());
 	pcl::transformPointCloud(*pc_in, *transformed_pc, pose_current.cast<float>());
