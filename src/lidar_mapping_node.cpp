@@ -50,7 +50,7 @@ void LidarMappingNode::onInit()
 
   // should these topic names be parameters instead of remapped?
   m_subPoints.subscribe(m_nodeHandle, "points_filtered", 1000);
-  m_subOdom.subscribe(m_nodeHandle, "odom", 100);
+  m_subOdom.subscribe(m_nodeHandle, "odom", 1000);
   
   m_pubMap = m_nodeHandle.advertise<sensor_msgs::PointCloud2>("map", 100);
 
