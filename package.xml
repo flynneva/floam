@@ -1,19 +1,19 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>floam</name>
-  <version>0.0.1</version>
+  <version>0.1.0</version>
 
   <description>
     A generic Lidar SLAM package based on FLOAM which was based on ALOAM by HKUST and LOAM by CMU
   </description>
 
+  <author email="wh200720041@gmail.com">Han Wang</author>
+  
   <maintainer email="evanflynn.msu@gmail.com">Evan Flynn</maintainer>
 
   <license>BSD</license>
   <url>https://wanghan.pro</url>
   <url>https://www.flynnlabs.dev</url>
-
-  <author email="wh200720041@gmail.com">Han Wang</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
